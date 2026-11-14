@@ -2,18 +2,46 @@
 Validation and model metrics module for Prometheus 375.
 Implements GET /validation:
 - holdout_year (2020), MAE, MAPE from metrics.json
-- before_after time series joining before_after.parquet with harmonized.parquet
-  providing raw, harmonized, source, uncertainty_lo, uncertainty_hi
+- before_after time series filtered on cell centroids for the selected region
+  (default pb_hr: 73.5, 27.5, 77.5, 32.5)
+- per-month aggregation computing raw, harmonized, uncertainty_lo, uncertainty_hi
+- source = 'mixed' when COUNT(DISTINCT h.source) > 1, else MAX(h.source)
+- partial = True for month '2026-11', False otherwise
+- multi-key caching by (area, bbox) for sub-millisecond responses
 """
 
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import duckdb
+from fastapi import HTTPException
 
-_validation_cache: Optional[Dict[str, Any]] = None
+try:
+    from backend.spatial import build_spatial_filter, init_duckdb_spatial, parse_bbox
+except ImportError:
+    from spatial import build_spatial_filter, init_duckdb_spatial, parse_bbox
+
+# Default Punjab/Haryana bounding box per DECISIONS.md
+DEFAULT_AREA = "pb_hr"
+DEFAULT_BBOX = "73.5,27.5,77.5,32.5"
+
+# Preset area mapping
+AREA_BBOX_MAP: Dict[str, str] = {
+    "pb_hr": "73.5,27.5,77.5,32.5",
+    "punjab_haryana": "73.5,27.5,77.5,32.5",
+    "brazil_pantanal": "-60.0,-22.0,-55.0,-16.0",
+    "brazil": "-60.0,-22.0,-55.0,-16.0",
+    "greece": "20.0,36.0,27.0,42.0",
+    "australia_nsw": "149.0,-37.5,153.5,-31.5",
+    "australia": "149.0,-37.5,153.5,-31.5",
+    "california": "-124.5,32.5,-114.0,42.0",
+    "india": "68.0,6.5,97.5,37.0",
+}
+
+# Cache mapped by cache_key: "area:bbox"
+_validation_cache: Dict[str, Dict[str, Any]] = {}
 
 
 def find_data_file(filename: str) -> Optional[Path]:
@@ -38,16 +66,46 @@ def find_data_file(filename: str) -> Optional[Path]:
     return None
 
 
-def get_validation_data(force_reload: bool = False) -> Dict[str, Any]:
+def get_validation_data(
+    bbox: Optional[str] = None,
+    area: Optional[str] = None,
+    force_reload: bool = False,
+) -> Dict[str, Any]:
     """
-    Load validation metrics and before/after time series.
-    Results are cached in memory for sub-millisecond response times.
+    Load validation metrics and before/after time series for the specified area or bbox.
+    Defaults to pb_hr (73.5, 27.5, 77.5, 32.5).
+    Filters on cell centroids (h.lat, h.lon) before the GROUP BY aggregation.
+    Results are cached by (effective_area, effective_bbox).
     """
     global _validation_cache
-    if _validation_cache is not None and not force_reload:
-        return _validation_cache
 
-    # 1. Load metrics.json
+    # 1. Resolve effective area and bbox
+    effective_area = area.lower().strip() if area else None
+    effective_bbox = bbox
+
+    if not effective_bbox and not effective_area:
+        effective_area = DEFAULT_AREA
+        effective_bbox = DEFAULT_BBOX
+    elif effective_area and not effective_bbox:
+        effective_bbox = AREA_BBOX_MAP.get(effective_area, DEFAULT_BBOX)
+    elif effective_bbox and not effective_area:
+        # Check if bbox matches a known area
+        matched_area = "custom"
+        for aid, abox in AREA_BBOX_MAP.items():
+            if abox == effective_bbox:
+                matched_area = aid
+                break
+        effective_area = matched_area
+
+    # Validate bbox format if provided
+    if effective_bbox:
+        parse_bbox(effective_bbox)
+
+    cache_key = f"{effective_area}:{effective_bbox}"
+    if not force_reload and cache_key in _validation_cache:
+        return _validation_cache[cache_key]
+
+    # 2. Load metrics.json
     metrics_path = find_data_file("metrics.json")
     holdout_year = 2020
     mae = 1003.26
@@ -58,12 +116,28 @@ def get_validation_data(force_reload: bool = False) -> Dict[str, Any]:
             with open(metrics_path, "r", encoding="utf-8") as f:
                 m = json.load(f)
                 holdout_year = int(m.get("holdout_year", 2020))
-                mae = round(float(m.get("mae", 1003.26)), 2)
-                mape = round(float(m.get("mape", 11.37)), 2)
+                # If area has specific metrics in regions dictionary
+                if effective_area in m.get("regions", {}):
+                    reg_m = m["regions"][effective_area].get("region_month", {})
+                    mae = round(float(reg_m.get("mae", m.get("mae", 1003.26))), 2)
+                    mape = round(float(reg_m.get("mape", m.get("mape", 11.37))), 2)
+                else:
+                    # Top-level pitch numbers (India / pb_hr default)
+                    mae = round(float(m.get("mae", 1003.26)), 2)
+                    mape = round(float(m.get("mape", 11.37)), 2)
         except Exception:
             pass
 
-    # 2. Load before/after series joined with harmonized.parquet
+    # 3. Construct spatial filter on cell centroids
+    spatial_conditions, spatial_params, requires_spatial = build_spatial_filter(
+        bbox=effective_bbox,
+        polygon=None,
+    )
+    # Qualify lat/lon with 'h.' so the join is completely unambiguous
+    cond_h = [c.replace("lon", "h.lon").replace("lat", "h.lat") for c in spatial_conditions]
+    where_clause = f"WHERE {' AND '.join(cond_h)}" if cond_h else ""
+
+    # 4. Load before/after series joined with harmonized.parquet
     before_after_records: List[Dict[str, Any]] = []
     ba_path = find_data_file("before_after.parquet")
     harm_path = find_data_file("harmonized.parquet")
@@ -71,40 +145,37 @@ def get_validation_data(force_reload: bool = False) -> Dict[str, Any]:
     if ba_path and harm_path:
         con = duckdb.connect(database=":memory:", read_only=False)
         try:
-            query = """
+            if requires_spatial:
+                init_duckdb_spatial(con)
+
+            query = f"""
                 SELECT 
                     b.month,
                     ROUND(SUM(b.raw), 2) AS raw,
                     ROUND(SUM(b.harmonized), 2) AS harmonized,
-                    COALESCE(MAX(h.source), 'viirs') AS source,
+                    CASE 
+                        WHEN COUNT(DISTINCT h.source) > 1 THEN 'mixed'
+                        ELSE COALESCE(MAX(h.source), 'viirs') 
+                    END AS source,
                     ROUND(GREATEST(0.0, SUM(b.harmonized) - SUM(h.uncertainty)), 2) AS uncertainty_lo,
                     ROUND(SUM(b.harmonized) + SUM(h.uncertainty), 2) AS uncertainty_hi
                 FROM read_parquet(?) b
                 JOIN read_parquet(?) h ON b.cell_id = h.cell_id AND b.month = h.month
+                {where_clause}
                 GROUP BY b.month
                 ORDER BY b.month ASC
             """
-            df = con.execute(query, [str(ba_path), str(harm_path)]).df()
+            params = [str(ba_path), str(harm_path)] + spatial_params
+            df = con.execute(query, params).df()
+
             if not df.empty:
-                before_after_records = df.to_dict(orient="records")
-        except Exception:
-            # Fallback if join fails: query before_after directly
-            try:
-                df = con.execute("""
-                    SELECT 
-                        month,
-                        ROUND(SUM(raw), 2) AS raw,
-                        ROUND(SUM(harmonized), 2) AS harmonized,
-                        'viirs' AS source,
-                        ROUND(SUM(harmonized) * 0.85, 2) AS uncertainty_lo,
-                        ROUND(SUM(harmonized) * 1.15, 2) AS uncertainty_hi
-                    FROM read_parquet(?)
-                    GROUP BY month
-                    ORDER BY month ASC
-                """, [str(ba_path)]).df()
-                before_after_records = df.to_dict(orient="records")
-            except Exception:
-                before_after_records = []
+                for row in df.to_dict(orient="records"):
+                    m_str = str(row["month"])
+                    row["partial"] = True if m_str == "2026-11" else False
+                    before_after_records.append(row)
+        except Exception as e:
+            # Fallback if join or spatial filter fails
+            before_after_records = []
         finally:
             con.close()
 
@@ -115,5 +186,5 @@ def get_validation_data(force_reload: bool = False) -> Dict[str, Any]:
         "before_after": before_after_records,
     }
 
-    _validation_cache = result
+    _validation_cache[cache_key] = result
     return result

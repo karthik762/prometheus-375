@@ -102,6 +102,7 @@ class BeforeAfterEntry(BaseModel):
     source: Optional[str] = "viirs"
     uncertainty_lo: Optional[float] = None
     uncertainty_hi: Optional[float] = None
+    partial: bool = False
 
 
 class ValidationResponse(BaseModel):
@@ -301,11 +302,15 @@ def export_analytics(
 
 
 @app.get("/validation", response_model=ValidationResponse)
-def validation():
+def validation(
+    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
+    area: Optional[str] = Query(None, description="Area preset identifier (e.g. pb_hr, punjab_haryana, brazil, etc.)"),
+):
     """
-    Return 2020 holdout validation metrics (MAE, MAPE) and harmonized before/after series.
+    Return 2020 holdout validation metrics (MAE, MAPE) and harmonized before/after series
+    filtered for the specified region (defaults to pb_hr: 73.5, 27.5, 77.5, 32.5).
     """
-    return get_validation_data()
+    return get_validation_data(bbox=bbox, area=area)
 
 
 if __name__ == "__main__":
