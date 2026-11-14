@@ -536,7 +536,8 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
           </mask>
           <linearGradient id={id('swath')} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stopColor="#C9CCD8" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#C9CCD8" stopOpacity="1" />
+            {/* Peak kept low: with the stage's floor glow, #B89C6B labels must stay ≥ 4.5:1. */}
+            <stop offset="0.5" stopColor="#C9CCD8" stopOpacity="0.8" />
             <stop offset="1" stopColor="#C9CCD8" stopOpacity="0" />
           </linearGradient>
           <radialGradient

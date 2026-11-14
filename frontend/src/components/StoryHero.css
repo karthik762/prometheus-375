@@ -307,7 +307,7 @@
   animation: sh-bg-swath 12s linear infinite;
 }
 .sh-bg-swath.is-hi {
-  opacity: 0.1;
+  opacity: 0.08; /* × 0.8 gradient peak: worst case #B89C6B on floor glow + swath ≈ 4.9:1 */
 }
 @keyframes sh-bg-swath {
   0% { transform: translateX(var(--from)); }
