@@ -54,6 +54,8 @@ export interface BeforeAfterRow {
   harmonized: number;
   uncertainty_lo?: number;
   uncertainty_hi?: number;
+  source?: 'viirs' | 'modis_converted' | 'mixed';
+  partial?: boolean;
 }
 
 export interface ValidationData {

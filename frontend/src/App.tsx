@@ -214,7 +214,7 @@ export const AppContent: React.FC = () => {
                   Checked against a held-out year
                 </h3>
                 <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                  We hide 2020, predict it, and report the error: 6.8% Mean Absolute Percentage Error (MAPE).
+                  We hide 2020, predict it, and report the error: 11.4% error per month across India (vs 24.8% with a single ratio).
                 </p>
               </div>
             </div>

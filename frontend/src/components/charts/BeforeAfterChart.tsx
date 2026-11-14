@@ -15,18 +15,49 @@ import { formatCount, formatMonthShort } from '../../lib/format';
 import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthLabel = (ym: string) => {
+  const [y, m] = ym.split('-');
+  return `${MONTHS[Number(m) - 1] ?? m} ${y}`;
+};
+
+// Solid dot for complete months, hollow dot for a partial (month-to-date) month.
+const makeDot = (color: string, r: number) => (props: any) => {
+  const { cx, cy, payload, index } = props;
+  if (cx == null || cy == null) return <g key={`d-${index}`} />;
+  return payload?.partial ? (
+    <circle key={`d-${index}`} cx={cx} cy={cy} r={r + 1.5} fill="var(--color-bg-surface)" stroke={color} strokeWidth={1.5} />
+  ) : (
+    <circle key={`d-${index}`} cx={cx} cy={cy} r={r} fill={color} />
+  );
+};
+
 export const BeforeAfterChart: React.FC = () => {
   const { data, isMock, loading, error } = useValidation();
 
-  // Prepare data with uncertainty bounds formatted for Area chart
+  // Prepare data with uncertainty bounds formatted for Area chart.
+  // Band only where the API supplies a non-zero lo/hi range (MODIS-estimated years); otherwise null = no band.
+  // Partial (month-to-date) rows are drawn as a separate dashed segment with hollow dots.
   const chartData = React.useMemo(() => {
     if (!data?.before_after) return [];
-    return data.before_after.map((row) => ({
-      ...row,
-      monthFormatted: formatMonthShort(row.month),
-      uncertaintyBand: [row.uncertainty_lo ?? row.harmonized * 0.9, row.uncertainty_hi ?? row.harmonized * 1.1],
-    }));
+    const rows = data.before_after;
+    return rows.map((row, i) => {
+      const nextPartial = rows[i + 1]?.partial === true;
+      return {
+        ...row,
+        monthFormatted: formatMonthShort(row.month),
+        uncertaintyBand:
+          row.uncertainty_lo != null && row.uncertainty_hi != null && row.uncertainty_hi > row.uncertainty_lo
+            ? [row.uncertainty_lo, row.uncertainty_hi]
+            : null,
+        harmonizedFull: row.partial ? null : row.harmonized,
+        harmonizedPartial: row.partial || nextPartial ? row.harmonized : null,
+      };
+    });
   }, [data]);
+
+  const partialRow = data?.before_after?.find((r) => r.partial);
+  const partialNote = partialRow ? `${monthLabel(partialRow.month)} = month to date (to 13 Nov)` : null;
 
   return (
     <div
@@ -71,7 +102,7 @@ export const BeforeAfterChart: React.FC = () => {
                   fontFamily: 'var(--font-mono)',
                 }}
               >
-                MAPE: <strong style={{ color: 'var(--color-fire-4)' }}>{data.mape.toFixed(1)}%</strong>
+                2020 holdout (India): <strong style={{ color: 'var(--color-fire-4)' }}>{data.mape}%</strong> MAPE
               </div>
             </>
           )}
@@ -156,6 +187,11 @@ export const BeforeAfterChart: React.FC = () => {
                             <span>Harmonized VIIRS-Eq:</span>
                             <strong style={{ fontFamily: 'var(--font-mono)' }}>{formatCount(item.harmonized)}</strong>
                           </div>
+                          {item.partial && partialNote && (
+                            <div style={{ color: '#8c92a8', marginTop: '4px', fontStyle: 'italic' }}>
+                              {partialNote}
+                            </div>
+                          )}
                         </div>
                       );
                     }
@@ -164,17 +200,16 @@ export const BeforeAfterChart: React.FC = () => {
                 />
                 <Legend
                   verticalAlign="top"
-                  height={32}
                   formatter={(val) => (
                     <span style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>{val}</span>
                   )}
                 />
 
-                {/* Uncertainty 90% confidence envelope */}
+                {/* Bootstrap 80% uncertainty range (p10–p90); only MODIS-estimated months carry one */}
                 <Area
                   type="monotone"
                   dataKey="uncertaintyBand"
-                  name="Harmonized 90% CI"
+                  name="Uncertainty (80% range, MODIS-estimated years)"
                   fill="rgba(184, 156, 107, 0.12)"
                   stroke="none"
                   isAnimationActive={true}
@@ -190,7 +225,7 @@ export const BeforeAfterChart: React.FC = () => {
                   stroke="#5f677a"
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
-                  dot={{ r: 2.5, fill: '#5f677a' }}
+                  dot={makeDot('#5f677a', 2.5)}
                   isAnimationActive={true}
                   animationDuration={500}
                   animationEasing="ease-out"
@@ -199,7 +234,7 @@ export const BeforeAfterChart: React.FC = () => {
                 {/* Harmonized series (continuous) */}
                 <Line
                   type="monotone"
-                  dataKey="harmonized"
+                  dataKey="harmonizedFull"
                   name="Prometheus 375 Harmonized"
                   stroke="var(--color-gold)"
                   strokeWidth={2.5}
@@ -208,9 +243,33 @@ export const BeforeAfterChart: React.FC = () => {
                   animationDuration={500}
                   animationEasing="ease-out"
                 />
+
+                {/* Partial (month-to-date) segment: dashed with hollow end dot */}
+                <Line
+                  type="monotone"
+                  dataKey="harmonizedPartial"
+                  name="Month to date (partial)"
+                  legendType="none"
+                  stroke="var(--color-gold)"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  dot={(props: any) =>
+                    props.payload?.partial ? makeDot('var(--color-gold)', 3)(props) : <g key={`p-${props.index}`} />
+                  }
+                  connectNulls={false}
+                  isAnimationActive={true}
+                  animationDuration={500}
+                  animationEasing="ease-out"
+                />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+        )}
+
+        {!loading && !error && chartData.length > 0 && partialNote && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)' }}>
+            Hollow / dashed point: {partialNote}. Not a decline — the month is still in progress.
+          </span>
         )}
       </div>
     </div>
