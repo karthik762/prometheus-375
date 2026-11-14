@@ -25,7 +25,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D6** P — 07_anomaly.py + 08_onset.py: median/p10/p90/z, onset shift days — after D3 — due Sat 20:00 — done 15:30 by Rishitha (96a0709); outputs anomaly_<region>.parquet, onset_<region>.parquet, onset_daily_<region>.parquet in data/processed/
 - [ ] **B3** K — /live: FIRMS NOAA-20 + NOAA-21 NRT, 30-min cache, snapshot fallback — after K2, B1 — due Sat 18:00
 - [ ] **B4** P — /anomaly endpoint (reads anomaly table) (help: Karthik) — after D6, B2 — due Sat 20:00 — reassigned to Karthik 15:43, **Ongoing**
-- [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00
+- [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00 — **Testing** (Snehitha, 18:05): components/calendar/BurnCalendar.tsx — viridis default, MODIS hatching, 2000→current month, no-data vs zero, month-to-date flag, uncertainty in tooltip. Needs a run on real harmonized.parquet (backend still serves data-sample)
 - [ ] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00 — **Testing**: built on mock (0b9fbc6); verify against Karthik's real /anomaly (cb92eb6)
 
 ## Integration

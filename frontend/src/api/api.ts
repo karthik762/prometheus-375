@@ -11,7 +11,7 @@ import type {
 
 // Mock data imports for offline dev mode (when VITE_API_URL is empty)
 import mockPresets from './mock/presets.json';
-import mockCalendar from './mock/calendar.json';
+import mockCalendar from '../mocks/calendar_punjab.json';
 import mockAnomaly from './mock/anomaly.json';
 import mockLive from './mock/live.geojson';
 import mockValidation from './mock/validation.json';

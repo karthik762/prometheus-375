@@ -10,6 +10,7 @@ import { TimeSlider } from './components/stats/TimeSlider';
 import { BeforeAfterChart } from './components/charts/BeforeAfterChart';
 import { DatasetCoverSection } from './components/data/DatasetCover';
 import { Reveal } from './components/ui/Reveal';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 export const AppContent: React.FC = () => {
   return (
@@ -23,7 +24,13 @@ export const AppContent: React.FC = () => {
 
         {/* 3. Explore: Preset Selection + Interactive Geographic Map */}
         <Reveal>
-          <FireMap />
+          <ErrorBoundary
+            height="480px"
+            message="The map couldn't start"
+            subtext="This browser has WebGL turned off or unavailable. The calendar and charts below still work."
+          >
+            <FireMap />
+          </ErrorBoundary>
         </Reveal>
 
         {/* 4. Timeline Slider Scrubber */}

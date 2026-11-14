@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
-import { useSelection } from '../../hooks/useSelection';
+import { useSelection, CURRENT_MONTH } from '../../hooks/useSelection';
 import { getHeatmapColor, getRampLegendSteps } from '../../lib/colorRamp';
 import { formatCount, formatMonthName } from '../../lib/format';
 import { LoadingState, EmptyState, ErrorState } from '../ui/States';
@@ -8,7 +8,12 @@ import { SampleDataBadge } from '../ui/SampleDataBadge';
 import type { CalendarRow } from '../../api/types';
 
 const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-const YEARS = Array.from({ length: 26 }, (_, i) => 2001 + i); // 2001 to 2026
+const FIRST_YEAR = 2000; // Terra MODIS from Nov 2000
+const CURRENT_YEAR = Number(CURRENT_MONTH.slice(0, 4));
+const YEARS = Array.from({ length: CURRENT_YEAR - FIRST_YEAR + 1 }, (_, i) => FIRST_YEAR + i);
+// Sensor milestones worth labelling on the x-axis (+ first/last year)
+const LABELLED_YEARS = new Set([FIRST_YEAR, 2005, 2012, 2018, 2023, CURRENT_YEAR]);
+const GRID_COLUMNS = `24px repeat(${YEARS.length}, 1fr)`;
 
 export const BurnCalendar: React.FC = () => {
   const { data, isMock, loading, error, refetch } = useCalendar();
@@ -122,7 +127,7 @@ export const BurnCalendar: React.FC = () => {
                 gap: '3px',
               }}
               role="grid"
-              aria-label="26-Year Burning Activity Heatmap"
+              aria-label={`Burning activity heatmap ${FIRST_YEAR}–${CURRENT_YEAR}`}
             >
               {/* Matrix: 12 Months down, 26 Years across */}
               {MONTH_LETTERS.map((letter, mIdx) => {
@@ -132,7 +137,7 @@ export const BurnCalendar: React.FC = () => {
                     key={`${letter}-${mIdx}`}
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '24px repeat(26, 1fr)',
+                      gridTemplateColumns: GRID_COLUMNS,
                       gap: '3px',
                       alignItems: 'center',
                     }}
@@ -152,9 +157,10 @@ export const BurnCalendar: React.FC = () => {
                       {letter}
                     </div>
 
-                    {/* 26 Year Cells */}
+                    {/* Year Cells */}
                     {YEARS.map((year, colIdx) => {
-                      if (year === 2026 && monthNum > 11) {
+                      const monthStr = `${year}-${String(monthNum).padStart(2, '0')}`;
+                      if (monthStr > CURRENT_MONTH) {
                         return (
                           <div
                             key={`${year}-${monthNum}`}
@@ -168,34 +174,53 @@ export const BurnCalendar: React.FC = () => {
                         );
                       }
 
-                      const monthStr = `${year}-${String(monthNum).padStart(2, '0')}`;
                       const cellData = calendarMap.get(monthStr);
-                      const count = cellData?.count ?? 0;
-                      const isModis = cellData?.source === 'modis_converted';
                       const isSelected = selectedMonth === monthStr;
+
+                      // No row = month not covered (before Terra, or outside the query) — not a true zero
+                      if (!cellData) {
+                        return (
+                          <div
+                            key={monthStr}
+                            role="gridcell"
+                            aria-label={`${formatMonthName(monthStr)}: no data`}
+                            title={`${formatMonthName(monthStr)}: no data`}
+                            style={{
+                              height: '18px',
+                              border: '1px dashed rgba(255, 255, 255, 0.08)',
+                              borderRadius: '2px',
+                            }}
+                          />
+                        );
+                      }
+
+                      const count = cellData.count;
+                      const isModis = cellData.source === 'modis_converted';
+                      const isPartial = monthStr === CURRENT_MONTH;
                       const cellColor = getHeatmapColor(count, maxCount, colorScale);
+                      const showTip = (el: HTMLElement) => {
+                        const rect = el.getBoundingClientRect();
+                        setHoveredCell({ row: cellData, x: rect.left + rect.width / 2, y: rect.top - 8 });
+                      };
 
                       return (
                         <button
                           key={monthStr}
                           type="button"
                           onClick={() => setSelectedMonth(monthStr)}
-                          onMouseEnter={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            if (cellData) {
-                              setHoveredCell({
-                                row: cellData,
-                                x: rect.left + rect.width / 2,
-                                y: rect.top - 8,
-                              });
-                            }
-                          }}
+                          onMouseEnter={(e) => showTip(e.currentTarget)}
+                          onFocus={(e) => showTip(e.currentTarget)}
                           onMouseLeave={() => setHoveredCell(null)}
+                          onBlur={() => setHoveredCell(null)}
                           className={`cell cell-stagger ${isModis ? 'hatched-cell' : ''}`}
                           style={{
                             height: '18px',
                             backgroundColor: cellColor,
-                            border: isSelected ? '1.5px solid var(--color-gold)' : '1px solid rgba(255, 255, 255, 0.05)',
+                            border: isSelected
+                              ? '1.5px solid var(--color-gold)'
+                              : isPartial
+                                ? '1px dashed var(--color-gold)'
+                                : '1px solid rgba(255, 255, 255, 0.05)',
                             borderRadius: '2px',
                             padding: 0,
                             cursor: 'pointer',
@@ -203,8 +228,10 @@ export const BurnCalendar: React.FC = () => {
                             position: 'relative',
                             zIndex: isSelected ? 4 : 1,
                           }}
-                          aria-label={`${formatMonthName(monthStr)}: ${formatCount(count)} fires (${
-                            isModis ? 'estimated from MODIS' : 'VIIRS 375m'
+                          aria-label={`${formatMonthName(monthStr)}${isPartial ? ' (month to date)' : ''}: ${formatCount(count)} fires (${
+                            isModis
+                              ? `estimated from MODIS, range ${formatCount(cellData.uncertainty_lo)}–${formatCount(cellData.uncertainty_hi)}`
+                              : 'VIIRS 375m'
                           })`}
                         />
                       );
@@ -217,7 +244,7 @@ export const BurnCalendar: React.FC = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '24px repeat(26, 1fr)',
+                  gridTemplateColumns: GRID_COLUMNS,
                   gap: '3px',
                   textAlign: 'center',
                   marginTop: '6px',
@@ -234,9 +261,7 @@ export const BurnCalendar: React.FC = () => {
                       userSelect: 'none',
                     }}
                   >
-                    {y === 2001 || y === 2006 || y === 2012 || y === 2018 || y === 2023 || y === 2026
-                      ? y
-                      : ''}
+                    {LABELLED_YEARS.has(y) ? `'${String(y).slice(2)}` : ''}
                   </div>
                 ))}
               </div>
@@ -290,7 +315,20 @@ export const BurnCalendar: React.FC = () => {
               display: 'inline-block',
             }}
           />
-          <span>Hatched: estimated from MODIS, 2001–2011</span>
+          <span>Hatched: estimated from MODIS (before VIIRS)</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span
+            style={{
+              width: '14px',
+              height: '14px',
+              border: '1px dashed rgba(255, 255, 255, 0.25)',
+              borderRadius: '2px',
+              display: 'inline-block',
+            }}
+          />
+          <span>No data</span>
         </div>
       </div>
 
@@ -316,14 +354,17 @@ export const BurnCalendar: React.FC = () => {
         >
           <div style={{ fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '2px' }}>
             {formatMonthName(hoveredCell.row.month)}
+            {hoveredCell.row.month === CURRENT_MONTH && (
+              <span style={{ color: 'var(--color-gold)', fontWeight: 400 }}> · month to date</span>
+            )}
           </div>
           <div style={{ color: 'var(--color-gold)', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
             {formatCount(hoveredCell.row.count)} hotspots
           </div>
           <div style={{ color: 'var(--color-text-tertiary)', fontSize: '0.6875rem', marginTop: '2px' }}>
             {hoveredCell.row.source === 'modis_converted'
-              ? 'Estimated from MODIS ± uncertainty'
-              : 'VIIRS Native 375m detection'}
+              ? `Estimated from MODIS · range ${formatCount(hoveredCell.row.uncertainty_lo)}–${formatCount(hoveredCell.row.uncertainty_hi)}`
+              : 'VIIRS 375 m detections'}
           </div>
         </div>
       )}

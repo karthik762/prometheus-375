@@ -6,7 +6,7 @@ const DEFAULT_AREA: AreaSelection = {
   type: 'preset',
   presetId: 'punjab_haryana',
   name: 'Punjab & Haryana (India)',
-  bbox: [73.8, 27.6, 77.6, 32.5],
+  bbox: [73.5, 27.5, 77.5, 32.5],
 };
 
 interface SelectionContextType {
@@ -25,14 +25,20 @@ interface SelectionContextType {
   setColorScale: (scale: ColorScaleType) => void;
 }
 
+// Terra MODIS starts Nov 2000 — first month of the harmonized record
+export const RECORD_START = '2000-11';
+const now = new Date();
+export const CURRENT_MONTH = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
 const SelectionContext = createContext<SelectionContextType | null>(null);
 
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const [area, setArea] = useState<AreaSelection>(DEFAULT_AREA);
-  const [startMonth, setStartMonth] = useState<string>('2001-01');
-  const [endMonth, setEndMonth] = useState<string>('2026-11');
-  const [selectedMonth, setSelectedMonth] = useState<string>('2026-11');
-  const [colorScale, setColorScale] = useState<ColorScaleType>('fire');
+  const [startMonth, setStartMonth] = useState<string>(RECORD_START);
+  const [endMonth, setEndMonth] = useState<string>(CURRENT_MONTH);
+  const [selectedMonth, setSelectedMonth] = useState<string>(CURRENT_MONTH);
+  // Viridis by default (AGENTS.md: viridis/cividis, colorblind-safe); 'fire' stays as a NavBar toggle
+  const [colorScale, setColorScale] = useState<ColorScaleType>('viridis');
 
   const setPreset = (preset: Preset) => {
     setArea({

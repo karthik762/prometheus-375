@@ -5,9 +5,9 @@ import { Button } from '../ui/Button';
 export const LatLonInput: React.FC = () => {
   const { area, setBBox } = useSelection();
 
-  const [minLon, setMinLon] = useState<string>('73.80');
-  const [minLat, setMinLat] = useState<string>('27.60');
-  const [maxLon, setMaxLon] = useState<string>('77.60');
+  const [minLon, setMinLon] = useState<string>('73.50');
+  const [minLat, setMinLat] = useState<string>('27.50');
+  const [maxLon, setMaxLon] = useState<string>('77.50');
   const [maxLat, setMaxLat] = useState<string>('32.50');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
