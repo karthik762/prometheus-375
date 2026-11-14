@@ -1215,7 +1215,7 @@
       "harmonized": 1026.22,
       "uncertainty_lo": 937.76,
       "uncertainty_hi": 1114.68,
-      "source": "viirs",
+      "source": "modis_converted",
       "partial": false
     },
     {
