@@ -11,15 +11,15 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [ ] **K5** K — Freeze data format + API contract (help: Rishitha, Poojitha, Snehitha) — after K1 — due Sat 11:00
 
 ## Build 1
-- [ ] **D1** R — 01_clean.py: type=0, confidence filters, unify MODIS/VIIRS columns — after K3 — due Sat 13:00
-- [ ] **D2** R — 02_grid.py: 0.25° cell x month x satellite counts (India) (help: Poojitha) — after D1 — due Sat 15:00
+- [x] **D1** R — 01_clean.py: type=0, confidence filters, unify MODIS/VIIRS columns — after K3 — due Sat 13:00 — **Finished** (42ec022)
+- [x] **D2** R — 02_grid.py: 0.25° cell x month x satellite counts (India) (help: Poojitha) — after D1 — due Sat 15:00 — **Finished** (a194171; all 5 regions, zero-filled)
 - [ ] **B1** K — FastAPI skeleton: /health, /presets, /calendar on sample data — after K1, K5 — due Sat 13:00
 - [ ] **B2** K — DuckDB spatial polygon/bbox filter on cell centroids (help: Snehitha) — after B1 — due Sat 15:00
 - [ ] **F1** S — React+Vite shell, MapLibre map, presets dropdown, lat/long input — after K4 — due Sat 13:00
 - [ ] **F2** S — Polygon draw tool + typed api.ts client (mock JSON per contract) — after F1, K5 — due Sat 15:00
 
 ## Build 2
-- [ ] **D3** R — 03_satfix.py: per-satellite average; S-NPP vs NOAA-20/21 overlap check — after D2 — due Sat 17:00
+- [x] **D3** R — 03_satfix.py: per-satellite average; S-NPP vs NOAA-20/21 overlap check — after D2 — due Sat 17:00 — **Finished** (e69d4e8, b20574f; overlap: SNPP/N20 median 0.976 r 0.998, N21/N20 0.940 r 0.999, no month-of-year flags)
 - [ ] **D4** R — 04_fit.py: MODIS->VIIRS ratio per region x month-of-year (2012-2026) (help: Poojitha) — after D3 — due Sat 19:00
 - [ ] **D5** P — 05_series.py + 06_validate.py: harmonized.parquet, 2020 holdout, metrics.json (help: Rishitha) — after D4 — due Sat 20:00
 - [ ] **D6** P — 07_anomaly.py + 08_onset.py: median/p10/p90/z, onset shift days — after D3 — due Sat 20:00
