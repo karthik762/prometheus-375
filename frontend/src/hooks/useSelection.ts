@@ -37,8 +37,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [startMonth, setStartMonth] = useState<string>(RECORD_START);
   const [endMonth, setEndMonth] = useState<string>(CURRENT_MONTH);
   const [selectedMonth, setSelectedMonth] = useState<string>(CURRENT_MONTH);
-  // Viridis by default (AGENTS.md: viridis/cividis, colorblind-safe); 'fire' stays as a NavBar toggle
-  const [colorScale, setColorScale] = useState<ColorScaleType>('viridis');
+  // Fire ramp by default; viridis (AGENTS.md colour-blind-safe option) is one click away in the NavBar
+  const [colorScale, setColorScale] = useState<ColorScaleType>('fire');
 
   const setPreset = (preset: Preset) => {
     setArea({
