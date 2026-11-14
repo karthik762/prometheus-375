@@ -357,6 +357,14 @@
   opacity: var(--bg-retire, 0);
 }
 
+/* Phones: moving labels would pass behind "Skip intro"; keep the dots and tracks only. */
+@media (max-width: 599.98px) {
+  .sh-bg-sat-lab,
+  .sh-bg-sat-ret {
+    display: none;
+  }
+}
+
 .sh-bg-emw {
   opacity: clamp(0, (var(--bg-ember, 0) - var(--t)) * var(--q), 1);
 }
