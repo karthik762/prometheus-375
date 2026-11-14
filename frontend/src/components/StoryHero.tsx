@@ -321,22 +321,333 @@ const NARROW: Layout = {
   fs: 1.5,
 };
 
-interface Star {
+// --------------------------------------------------------------------------- backdrop
+// Decorative only (aria-hidden, pointer-events: none), painted under the copy and the chart.
+// Coordinates live in a per-layout box drawn with preserveAspectRatio="xMidYMid slice".
+
+interface BgOrbit {
+  key: 'terra' | 'aqua' | 'snpp' | 'noaa';
+  d: string; // open arc that enters and leaves off-screen, so the loop is seamless
+  dur: number; // s per pass
+  sats: { name: string; vis: string; begin: number }[]; // vis = CSS custom property gating it
+}
+interface BgGeo {
+  w: number;
+  h: number;
+  font: number;
+  orbits: BgOrbit[];
+  grid: { x0: number; y0: number; x1: number; y1: number; step: number; fade: [number, number, number, number] };
+  ticks: { x: number; y: number; text: string; anchor: 'start' | 'end' }[];
+  planets: { x: number; y: number; r: number; near: boolean }[];
+  embers: { x0: number; x1: number; y: number; rise: number };
+  hi: { cx: number; cy: number; rx: number; ry: number }; // where the chart sits (swath brightens)
+  angle: number; // swath tilt
+}
+
+const SAT_VIS = { all: '1', snpp: 'var(--bg-snpp, 0)', n20: 'var(--bg-n20, 0)', n21: 'var(--bg-n21, 0)' };
+
+const BG_WIDE: BgGeo = {
+  w: 1600,
+  h: 900,
+  font: 11,
+  orbits: [
+    { key: 'terra', d: 'M1180 -40 A700 380 -20 0 0 1660 330', dur: 34, sats: [{ name: 'Terra', vis: SAT_VIS.all, begin: -6 }] },
+    { key: 'aqua', d: 'M-60 560 A620 340 15 0 1 520 940', dur: 30, sats: [{ name: 'Aqua', vis: SAT_VIS.all, begin: -19 }] },
+    { key: 'snpp', d: 'M900 -40 A900 520 -20 0 0 1660 540', dur: 46, sats: [{ name: 'S-NPP', vis: SAT_VIS.snpp, begin: -28 }] },
+    {
+      key: 'noaa',
+      d: 'M1040 940 A720 380 10 0 1 1660 560',
+      dur: 40,
+      sats: [
+        { name: 'NOAA-20', vis: SAT_VIS.n20, begin: -8 },
+        { name: 'NOAA-21', vis: SAT_VIS.n21, begin: -28 },
+      ],
+    },
+  ],
+  // 0.25° graticule on the right (text sits left); fades in from x 820 to 1160.
+  grid: { x0: 820, y0: 0, x1: 1600, y1: 900, step: 44, fade: [820, 0, 1160, 0] },
+  ticks: [
+    { x: 820 + 13 * 44 - 6, y: 4 * 44 - 6, text: '31.0°N', anchor: 'end' },
+    { x: 820 + 13 * 44 - 6, y: 8 * 44 - 6, text: '30.0°N', anchor: 'end' },
+    { x: 820 + 8 * 44 + 6, y: 15 * 44 - 6, text: '75.0°E', anchor: 'start' },
+  ],
+  planets: [
+    { x: 1310, y: 540, r: 30, near: false }, // right of the chart, clear of the stat block
+    { x: 150, y: 780, r: 22, near: true },
+  ],
+  embers: { x0: 330, x1: 1270, y: 830, rise: 320 },
+  hi: { cx: 800, cy: 620, rx: 560, ry: 260 },
+  angle: -28,
+};
+
+const BG_NARROW: BgGeo = {
+  w: 400,
+  h: 860,
+  font: 9,
+  orbits: [
+    { key: 'terra', d: 'M250 -30 A300 200 -20 0 0 430 180', dur: 30, sats: [{ name: 'Terra', vis: SAT_VIS.all, begin: -6 }] },
+    { key: 'aqua', d: 'M-30 660 A260 200 15 0 1 190 890', dur: 26, sats: [{ name: 'Aqua', vis: SAT_VIS.all, begin: -15 }] },
+    { key: 'snpp', d: 'M140 -30 A380 260 -20 0 0 430 300', dur: 38, sats: [{ name: 'S-NPP', vis: SAT_VIS.snpp, begin: -20 }] },
+    {
+      key: 'noaa',
+      d: 'M250 890 A300 200 10 0 1 430 650',
+      dur: 30,
+      sats: [
+        { name: 'NOAA-20', vis: SAT_VIS.n20, begin: -4 },
+        { name: 'NOAA-21', vis: SAT_VIS.n21, begin: -19 },
+      ],
+    },
+  ],
+  // Text is on top and the chart fills the middle, so the graticule lives in the strip below
+  // the chart and fades in going down; tick labels stay clear of the chart and the rail.
+  grid: { x0: 0, y0: 440, x1: 400, y1: 860, step: 28, fade: [0, 440, 0, 640] },
+  ticks: [
+    { x: 6, y: 440 + 9 * 28 - 4, text: '31.0°N', anchor: 'start' },
+    { x: 6, y: 440 + 13 * 28 - 4, text: '30.0°N', anchor: 'start' },
+    { x: 8 * 28 + 4, y: 440 + 12 * 28 - 4, text: '75.0°E', anchor: 'start' },
+  ],
+  planets: [
+    { x: 340, y: 250, r: 18, near: false },
+    { x: 40, y: 600, r: 14, near: true },
+  ],
+  embers: { x0: 30, x1: 370, y: 670, rise: 240 },
+  hi: { cx: 200, cy: 560, rx: 230, ry: 230 },
+  angle: -34,
+};
+
+interface BgStar {
   x: number;
   y: number;
   r: number;
+  o: number;
+  warm: boolean;
   tw: boolean;
   delay: number;
 }
-function makeStars(l: Layout): Star[] {
-  const rand = rng(l.name === 'wide' ? 7 : 11);
-  return Array.from({ length: 80 }, () => ({
-    x: rand() * l.w,
-    y: rand() * l.h * 0.85,
-    r: 0.6 + rand() * 1.4,
-    tw: rand() < 0.35,
-    delay: rand() * 4,
+interface BgEmber {
+  x: number;
+  r: number;
+  dx: number;
+  dur: number;
+  delay: number;
+}
+
+function makeBackdrop(g: BgGeo, small: boolean) {
+  const rand = rng(g.w * 7 + (small ? 1 : 0));
+  const H = g.h + 90; // star layers are taller than the stage so parallax never runs dry
+  const star = (near: boolean): BgStar => ({
+    x: rand() * g.w,
+    y: rand() * H,
+    r: near ? 0.8 + rand() * 0.7 : 0.5 + rand() * 0.5, // ~1–2 px rendered
+    o: near ? 0.15 + rand() * 0.2 : 0.08 + rand() * 0.12,
+    warm: rand() < 0.3,
+    tw: rand() < 0.15,
+    delay: rand() * 6,
+  });
+  const total = small ? 70 : 120;
+  const far = Array.from({ length: Math.round(total * 0.6) }, () => star(false));
+  const near = Array.from({ length: total - far.length }, () => star(true));
+  const embers: BgEmber[] = Array.from({ length: small ? 14 : 26 }, () => ({
+    x: g.embers.x0 + rand() * (g.embers.x1 - g.embers.x0),
+    r: 0.9 + rand() * 1.3,
+    dx: (rand() - 0.5) * 60,
+    dur: 6 + rand() * 6,
+    delay: -rand() * 12,
   }));
+  return { H, far, near, embers };
+}
+
+/** 4-point sparkle like the logo's, centred on 0,0. */
+const sparkle = (s: number) =>
+  `M0 ${-s}Q${s * 0.12} ${-s * 0.12} ${s} 0Q${s * 0.12} ${s * 0.12} 0 ${s}Q${-s * 0.12} ${s * 0.12} ${-s} 0Q${-s * 0.12} ${-s * 0.12} 0 ${-s}Z`;
+
+interface BackdropProps {
+  uid: string;
+  narrow: boolean;
+  small: boolean;
+  reduced: boolean;
+}
+
+function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
+  const g = narrow ? BG_NARROW : BG_WIDE;
+  const bd = useMemo(() => makeBackdrop(g, small), [g, small]);
+  const id = (s: string) => `${uid}-bg-${s}`;
+  const diag = Math.hypot(g.w, g.h);
+  const swathW = narrow ? 120 : 240;
+
+  const starLayer = (near: boolean) => (
+    <div className={`sh-bg-layer ${near ? 'is-near' : 'is-far'}`}>
+      <svg viewBox={`0 0 ${g.w} ${bd.H}`} preserveAspectRatio="xMidYMin slice">
+        {(near ? bd.near : bd.far).map((s, i) => (
+          <circle
+            key={i}
+            className={s.tw && !reduced ? 'sh-bg-star is-tw' : 'sh-bg-star'}
+            cx={s.x.toFixed(1)}
+            cy={s.y.toFixed(1)}
+            r={s.r.toFixed(2)}
+            fill={s.warm ? '#B89C6B' : '#C9CCD8'}
+            style={vars({ '--so': s.o.toFixed(3), animationDelay: `${(-s.delay).toFixed(2)}s` })}
+          />
+        ))}
+        {g.planets
+          .filter((pl) => pl.near === near)
+          .map((pl, i) => (
+            <g key={`pl${i}`} transform={`translate(${pl.x} ${pl.y})`}>
+              <circle r={pl.r} fill={`url(#${id(near ? 'glow-n' : 'glow-f')})`} opacity="0.3" />
+              <path d={sparkle(pl.r * 0.42)} fill="#DDE4F5" opacity="0.32" />
+            </g>
+          ))}
+        <defs>
+          <radialGradient id={id(near ? 'glow-n' : 'glow-f')}>
+            <stop offset="0" stopColor="#DDE4F5" stopOpacity="0.9" />
+            <stop offset="0.35" stopColor="#C9CCD8" stopOpacity="0.35" />
+            <stop offset="1" stopColor="#C9CCD8" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+
+  const { grid } = g;
+  const vLines: number[] = [];
+  for (let x = grid.x0; x <= grid.x1; x += grid.step) vLines.push(x);
+  const hLines: number[] = [];
+  for (let y = grid.y0; y <= grid.y1; y += grid.step) hLines.push(y);
+
+  return (
+    <div className="sh-bg" aria-hidden="true">
+      {starLayer(false)}
+      {starLayer(true)}
+      <svg className="sh-bg-main" viewBox={`0 0 ${g.w} ${g.h}`} preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient
+            id={id('gridfade')}
+            gradientUnits="userSpaceOnUse"
+            x1={grid.fade[0]}
+            y1={grid.fade[1]}
+            x2={grid.fade[2]}
+            y2={grid.fade[3]}
+          >
+            <stop offset="0" stopColor="#fff" stopOpacity="0" />
+            <stop offset="1" stopColor="#fff" stopOpacity="1" />
+          </linearGradient>
+          <mask id={id('gridmask')} maskUnits="userSpaceOnUse" x="0" y="0" width={g.w} height={g.h}>
+            <rect x="0" y="0" width={g.w} height={g.h} fill={`url(#${id('gridfade')})`} />
+          </mask>
+          <linearGradient id={id('swath')} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#C9CCD8" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#C9CCD8" stopOpacity="1" />
+            <stop offset="1" stopColor="#C9CCD8" stopOpacity="0" />
+          </linearGradient>
+          <radialGradient
+            id={id('hi')}
+            gradientUnits="userSpaceOnUse"
+            cx={g.hi.cx}
+            cy={g.hi.cy}
+            r={g.hi.rx}
+            gradientTransform={`translate(${g.hi.cx} ${g.hi.cy}) scale(1 ${(g.hi.ry / g.hi.rx).toFixed(3)}) translate(${-g.hi.cx} ${-g.hi.cy})`}
+          >
+            <stop offset="0" stopColor="#fff" stopOpacity="1" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </radialGradient>
+          <mask id={id('himask')} maskUnits="userSpaceOnUse" x="0" y="0" width={g.w} height={g.h}>
+            <rect x="0" y="0" width={g.w} height={g.h} fill={`url(#${id('hi')})`} />
+          </mask>
+          <radialGradient id={id('satglow')}>
+            <stop offset="0" stopColor="#FFE3C4" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#FFE3C4" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* 4. graticule */}
+        <g className="sh-bg-grid" mask={`url(#${id('gridmask')})`}>
+          {vLines.map((x) => (
+            <line key={`v${x}`} x1={x} x2={x} y1={grid.y0} y2={grid.y1} />
+          ))}
+          {hLines.map((y) => (
+            <line key={`h${y}`} x1={grid.x0} x2={grid.x1} y1={y} y2={y} />
+          ))}
+        </g>
+        {!reduced && (
+          <g className="sh-bg-ticks" fontSize={g.font}>
+            {g.ticks.map((t) => (
+              <text key={t.text} x={t.x} y={t.y} textAnchor={t.anchor}>
+                {t.text}
+              </text>
+            ))}
+          </g>
+        )}
+
+        {!reduced && (
+          <>
+            {/* 3. scan swath; the masked copy brightens it where it crosses the chart */}
+            {[false, true].map((hi) => (
+              <g key={hi ? 'hi' : 'base'} mask={hi ? `url(#${id('himask')})` : undefined}>
+                <g transform={`translate(${g.w / 2} ${g.h / 2}) rotate(${g.angle})`}>
+                  <rect
+                    className={hi ? 'sh-bg-swath is-hi' : 'sh-bg-swath'}
+                    x={-swathW / 2}
+                    y={-diag / 2}
+                    width={swathW}
+                    height={diag}
+                    fill={`url(#${id('swath')})`}
+                    style={vars({ '--from': `${-(diag / 2 + swathW)}px`, '--to': `${diag / 2 + swathW}px` })}
+                  />
+                </g>
+              </g>
+            ))}
+
+            {/* 2. satellite tracks */}
+            {g.orbits.map((o) => (
+              <g key={o.key} className={`sh-bg-orbit is-${o.key}`}>
+                <path className="sh-bg-track" d={o.d} />
+                {o.sats.map((s) => (
+                  <g key={s.name} className="sh-bg-sat" style={vars({ '--vis': s.vis })}>
+                    <animateMotion dur={`${o.dur}s`} begin={`${s.begin}s`} repeatCount="indefinite" path={o.d} />
+                    <circle r={g.font * 0.75} fill={`url(#${id('satglow')})`} className="sh-bg-sat-glow" />
+                    <circle r={g.font * 0.2} className="sh-bg-sat-core" />
+                    {o.key === 'snpp' && <circle r={g.font * 0.2} className="sh-bg-sat-dead" />}
+                    <text className="sh-bg-sat-lab" x={g.font * 0.8} y={-g.font * 0.6} fontSize={g.font}>
+                      {s.name}
+                    </text>
+                    {o.key === 'snpp' && (
+                      <text className="sh-bg-sat-ret" x={g.font * 0.8} y={g.font * 0.6} fontSize={g.font}>
+                        retired
+                      </text>
+                    )}
+                  </g>
+                ))}
+              </g>
+            ))}
+
+            {/* 5. embers rising off the chart baseline; the wrapper gates density by beat */}
+            <g className="sh-bg-embers">
+              {bd.embers.map((e, i) => (
+                <g
+                  key={i}
+                  className="sh-bg-emw"
+                  style={vars({ '--t': (i / bd.embers.length).toFixed(3), '--q': bd.embers.length })}
+                >
+                  <circle
+                    className="sh-bg-ember"
+                    cx={e.x.toFixed(1)}
+                    cy={g.embers.y}
+                    r={e.r.toFixed(2)}
+                    style={vars({
+                      '--dx': `${e.dx.toFixed(1)}px`,
+                      '--rise': `${-g.embers.rise}px`,
+                      animationDuration: `${e.dur.toFixed(2)}s`,
+                      animationDelay: `${e.delay.toFixed(2)}s`,
+                    })}
+                  />
+                </g>
+              ))}
+            </g>
+          </>
+        )}
+      </svg>
+    </div>
+  );
 }
 
 // --------------------------------------------------------------------------- scroll math
@@ -386,6 +697,7 @@ function beatProgress(p: number): BeatState {
 }
 
 const NARROW_Q = '(max-width: 640px)';
+const SMALL_Q = '(max-width: 900px)'; // fewer backdrop particles
 const REDUCED_Q = '(prefers-reduced-motion: reduce)';
 const mq = (q: string) => typeof window !== 'undefined' && window.matchMedia(q).matches;
 
@@ -554,10 +866,10 @@ export default function StoryHero() {
   const uid = 'sh' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const narrow = useMedia(NARROW_Q);
   const reduced = useMedia(REDUCED_Q);
+  const small = useMedia(SMALL_Q);
   const layout = narrow ? NARROW : WIDE;
 
   const geos = useMemo(() => HEROES.map((h, i) => buildGeo(h, 375 + i * 31, i === 0)), []);
-  const stars = useMemo(() => makeStars(layout), [layout]);
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -642,6 +954,17 @@ export default function StoryHero() {
         setVar(el, '--sw', X0 + fx * g.band);
         setVar(el, '--shk', fix > 0 ? 0 : Math.sin(p * 2400 + j * 1.7));
       }
+
+      // Backdrop: satellites join with their beats (S-NPP at the 2012 crack, NOAA-20 with the
+      // fix, NOAA-21 with "anywhere"); S-NPP retires in the last beat. Embers are densest
+      // through crack + fix and nearly gone by 2026 (the quiet season). Grid tick labels show
+      // in the Punjab + Haryana beats (full-size chart), and clear out before the stat lands.
+      setVar(stage, '--bg-snpp', s2);
+      setVar(stage, '--bg-n20', s3);
+      setVar(stage, '--bg-n21', s4);
+      setVar(stage, '--bg-retire', s6);
+      setVar(stage, '--bg-ember', clamp01(0.35 + 0.65 * s2 - 0.5 * s4 - 0.45 * s5));
+      setVar(stage, '--bg-tick', (1 - m) * (1 - seg(s5, 0, 0.15)));
 
       setVar(stage, '--stat', seg(s5, 0.15, 0.3));
       // Beat 6's motion: the "−N%" locks in, then the headline + buttons arrive in its hold.
@@ -783,6 +1106,7 @@ export default function StoryHero() {
       aria-labelledby={headlineId}
     >
       <div ref={stageRef} className="sh-stage">
+        <StoryBackdrop uid={uid} narrow={narrow} small={small} reduced={reduced} />
         <div className="sh-copy">
           <div className="sh-main">
             <div className="sh-lines">
@@ -868,19 +1192,6 @@ export default function StoryHero() {
               <line x1="0" y1="0" x2="0" y2="9" stroke="#E6863F" strokeWidth="2.5" />
             </pattern>
           </defs>
-
-          <g className="sh-sky">
-            {stars.map((s, i) => (
-              <circle
-                key={i}
-                className={s.tw ? 'sh-star is-tw' : 'sh-star'}
-                cx={s.x}
-                cy={s.y}
-                r={s.r}
-                style={s.tw ? vars({ animationDelay: `${s.delay.toFixed(2)}s` }) : undefined}
-              />
-            ))}
-          </g>
 
           {/* Others first so the feature chart paints on top while it resizes. */}
           {OTHERS.map((h, j) => (

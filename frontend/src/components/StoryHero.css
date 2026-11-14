@@ -17,6 +17,7 @@
   height: 100vh;
   height: 100svh;
   overflow: hidden;
+  isolation: isolate; /* the backdrop's z-index:-1 stays inside the stage, above its bg */
   display: flex;
   flex-direction: column;
   background: radial-gradient(ellipse 70% 45% at 50% 100%, rgba(143, 58, 10, 0.3), rgba(13, 14, 24, 0) 100%),
@@ -242,16 +243,133 @@
   font-family: var(--font-sans, "Inter", system-ui, sans-serif);
 }
 
-.sh-star {
+/* -------------------------------------------------------------------------- backdrop
+   Decorative layer under copy + chart. Every element stays within opacity 0.08–0.35 and
+   only transform / opacity change. Beat-driven vars (--bg-snpp, --bg-n20, --bg-n21,
+   --bg-retire, --bg-ember, --bg-tick) are written on .sh-stage by the scroll loop. */
+
+.sh-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sh-bg svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sh-bg-layer {
+  position: absolute;
+  inset: 0 0 -90px 0; /* taller than the stage so parallax never shows an empty strip */
+  will-change: transform;
+}
+.sh-bg-layer.is-far {
+  transform: translate3d(0, calc(var(--p, 0) * -40px), 0);
+}
+.sh-bg-layer.is-near {
+  transform: translate3d(0, calc(var(--p, 0) * -80px), 0);
+}
+.sh-bg-main {
+  position: absolute;
+  inset: 0;
+}
+
+.sh-bg-star {
+  opacity: var(--so, 0.15);
+}
+.sh-bg-star.is-tw {
+  animation: sh-bg-twinkle 4.5s ease-in-out infinite alternate;
+}
+@keyframes sh-bg-twinkle {
+  from { opacity: 0.08; }
+  to { opacity: 0.35; }
+}
+
+.sh-bg-grid {
+  opacity: 0.55; /* #232741 at full strength competes with the chart's gridless look */
+}
+.sh-bg-grid line {
+  stroke: #232741;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.sh-bg-ticks {
+  fill: #b89c6b;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  opacity: calc(var(--bg-tick, 0) * 0.35);
+}
+
+.sh-bg-swath {
+  opacity: 0.08;
+  animation: sh-bg-swath 12s linear infinite;
+}
+.sh-bg-swath.is-hi {
+  opacity: 0.1;
+}
+@keyframes sh-bg-swath {
+  0% { transform: translateX(var(--from)); }
+  55%, 100% { transform: translateX(var(--to)); }
+}
+
+.sh-bg-track {
+  fill: none;
+  stroke: #c9ccd8;
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.14;
+}
+.sh-bg-orbit.is-snpp .sh-bg-track {
+  opacity: calc(var(--bg-snpp, 0) * 0.14);
+}
+.sh-bg-orbit.is-noaa .sh-bg-track {
+  opacity: calc(var(--bg-n20, 0) * 0.14);
+}
+.sh-bg-sat {
+  opacity: calc(var(--vis, 1) * 0.35);
+}
+.sh-bg-sat-glow {
+  opacity: 0.6;
+}
+.sh-bg-sat-core {
   fill: #ffe3c4;
-  opacity: 0.45;
 }
-.sh-star.is-tw {
-  animation: sh-twinkle 3.2s ease-in-out infinite alternate;
+.sh-bg-sat-lab,
+.sh-bg-sat-ret {
+  fill: #c9ccd8;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.04em;
 }
-@keyframes sh-twinkle {
-  from { opacity: 0.12; }
-  to { opacity: 0.7; }
+/* S-NPP retires in the last beat: its dot and glow go grey, a "retired" tag appears. */
+.is-snpp .sh-bg-sat-core,
+.is-snpp .sh-bg-sat-glow {
+  opacity: calc(1 - var(--bg-retire, 0));
+}
+.sh-bg-sat-dead {
+  fill: #6b6f80;
+  opacity: var(--bg-retire, 0);
+}
+.sh-bg-sat-ret {
+  fill: #8a8ea0;
+  opacity: var(--bg-retire, 0);
+}
+
+.sh-bg-emw {
+  opacity: clamp(0, (var(--bg-ember, 0) - var(--t)) * var(--q), 1);
+}
+.sh-bg-ember {
+  fill: #e6863f;
+  opacity: 0;
+  animation: sh-bg-ember 9s linear infinite;
+}
+@keyframes sh-bg-ember {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.32; }
+  70% { opacity: 0.2; }
+  100% { transform: translate(var(--dx), var(--rise)); opacity: 0; }
 }
 
 .sh-chart {
@@ -477,8 +595,13 @@
   height: auto;
   max-height: 80vh;
 }
+.is-static .sh-bg-layer {
+  transform: none;
+}
 @media (prefers-reduced-motion: reduce) {
-  .sh-star.is-tw {
+  .sh-bg-star.is-tw,
+  .sh-bg-swath,
+  .sh-bg-ember {
     animation: none;
   }
   .sh-btn,
