@@ -43,11 +43,23 @@ import argparse
 import datetime as dt
 import sys
 import time
+from pathlib import Path
 
 import duckdb
 import numpy as np
 
-from daily_counts import PROCESSED, REPO_ROOT, INTERIM, areas, build_daily, data_end, q, sat_windows
+from daily_counts import (
+    PRESET_AREAS,
+    PROCESSED,
+    REPO_ROOT,
+    INTERIM,
+    areas,
+    build_daily,
+    data_end,
+    preset_inputs,
+    q,
+    sat_windows,
+)
 
 MTD_MONTH = "2026-11"
 MIN_PRIOR = 5
@@ -66,21 +78,35 @@ def stats(cur: float, prior: np.ndarray) -> dict:
     if n == 0:
         return dict(median=nan, p10=nan, p90=nan, z_score=nan, percentile=nan, n_prior_years=0)
     p10, med, p90 = np.percentile(prior, [10, 50, 90])
-    z = (cur - prior.mean()) / max(prior.std(ddof=1), Z_STD_FLOOR) if n >= 2 else nan
+    z = (cur - prior.mean()) / \
+        max(prior.std(ddof=1), Z_STD_FLOOR) if n >= 2 else nan
     pct = 100.0 * (np.sum(prior < cur) + 0.5 * np.sum(prior == cur)) / n
     return dict(median=float(med), p10=float(p10), p90=float(p90), z_score=float(z),
                 percentile=float(pct), n_prior_years=n)
 
 
-def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end: dt.date) -> None:
+def anomaly_region(
+    con: duckdb.DuckDBPyConnection,
+    region: str,
+    windows: dict,
+    end: dt.date,
+    preset_id: str | None = None,
+    preset_clean_path: Path | None = None,
+) -> None:
     t0 = time.time()
     harm = PROCESSED / f"harmonized_{region}.parquet"
-    out = PROCESSED / f"anomaly_{region}.parquet"
-    assert end.strftime("%Y-%m") == MTD_MONTH, f"data ends {end}, expected inside {MTD_MONTH}"
+    out = (PROCESSED / f"anomaly_preset_{preset_id}.parquet" if preset_id
+           else PROCESSED / f"anomaly_{region}.parquet")
+    if preset_id and out.exists():
+        raise FileExistsError(
+            f"Refusing to overwrite preset anomaly output: {out}")
+    assert end.strftime(
+        "%Y-%m") == MTD_MONTH, f"data ends {end}, expected inside {MTD_MONTH}"
 
     # --- monthly area totals from 05_series ----------------------------------
     area_sql = " UNION ALL ".join(
-        f"SELECT '{a}' AS area_id, * FROM h WHERE {pred}" for a, pred in areas(region))
+        f"SELECT '{a}' AS area_id, * FROM h WHERE {pred}"
+        for a, pred in areas(region, preset_id))
     monthly = con.execute(f"""
         WITH h AS (SELECT *, lat AS clat, lon AS clon FROM read_parquet({q(harm)})),
              a AS ({area_sql})
@@ -91,7 +117,8 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
     """).fetchall()
 
     # --- month-to-date and full-November check via daily counts --------------
-    build_daily(con, region, windows, end)
+    build_daily(con, region, windows, end,
+                clean_path=preset_clean_path, preset_id=preset_id)
     nov = con.execute(f"""
         SELECT area_id, year(d) AS y, (day(d) <= {end.day}) AS in_mtd,
                min(n_viirs) AS min_nv, sum(viirs) AS v, sum(modis_conv) AS m, count(*) AS days
@@ -100,7 +127,8 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
     """).fetchall()
     full_nov, mtd = {}, {}
     for area, y, in_mtd, min_nv, v, m, days in nov:
-        val, src = (v, "viirs") if min_nv and min_nv > 0 else (m, "modis_converted")
+        val, src = (v, "viirs") if min_nv and min_nv > 0 else (
+            m, "modis_converted")
         if in_mtd is None:
             full_nov[(area, y)] = (val, src, days)
         elif in_mtd:
@@ -129,12 +157,14 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
             y, moy = int(month[:4]), month[5:]
             if month == MTD_MONTH:
                 cur, src = mtd[(area, y)]
-                prior = np.array([mtd[(area, py)][0] for py in range(y - 30, y) if (area, py) in mtd])
+                prior = np.array([mtd[(area, py)][0]
+                                 for py in range(y - 30, y) if (area, py) in mtd])
                 share = 1.0 if src == "modis_converted" else 0.0
                 rows.append(dict(area_id=area, month=month, current=float(cur), **stats(cur, prior),
                                  modis_share=share, month_to_date=True, mtd_days=end.day))
                 continue
-            prior = np.array([series[f"{py}-{moy}"] for py in range(y - 30, y) if f"{py}-{moy}" in series])
+            prior = np.array(
+                [series[f"{py}-{moy}"] for py in range(y - 30, y) if f"{py}-{moy}" in series])
             t, mc, rs = meta[(area, month)]
             share = mc / t if t > 0 else rs
             rows.append(dict(area_id=area, month=month, current=float(cur), **stats(cur, prior),
@@ -145,14 +175,16 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
         tag = f"[{region}] {r['area_id']} {r['month']}"
         if r["n_prior_years"] >= MIN_PRIOR:
             for k in ("median", "p10", "p90", "z_score", "percentile", "current", "modis_share"):
-                assert np.isfinite(r[k]), f"{tag}: {k} is {r[k]} with {r['n_prior_years']} prior years"
+                assert np.isfinite(
+                    r[k]), f"{tag}: {k} is {r[k]} with {r['n_prior_years']} prior years"
         if r["n_prior_years"] >= 1:
             assert r["p10"] <= r["median"] + 1e-9 and r["median"] <= r["p90"] + 1e-9, \
                 f"{tag}: p10 {r['p10']} <= median {r['median']} <= p90 {r['p90']} fails"
         assert r["current"] >= 0 and 0 <= r["modis_share"] <= 1, tag
     keys = {(r["area_id"], r["month"]) for r in rows}
     assert len(keys) == len(rows), f"[{region}] duplicate (area_id, month)"
-    assert sum(r["month_to_date"] for r in rows) == len(areas(region))
+    assert sum(r["month_to_date"]
+               for r in rows) == len(areas(region, preset_id))
 
     con.execute("""
         CREATE OR REPLACE TEMP TABLE anom (area_id VARCHAR, month VARCHAR, current DOUBLE,
@@ -167,9 +199,10 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
     con.execute(f"COPY (SELECT * FROM anom ORDER BY area_id, month) TO {q(out)} "
                 f"(FORMAT PARQUET, COMPRESSION ZSTD)")
 
-    print(f"\n=== {region.upper()} ===  areas={', '.join(a for a, _ in areas(region))}  rows={len(rows):,}"
+    print(f"\n=== {region.upper()} ===  areas={', '.join(a for a, _ in areas(region, preset_id))}  rows={len(rows):,}"
           f"  -> {out.relative_to(REPO_ROOT)}  ({time.time() - t0:.0f}s)")
-    print(f"  daily method == 05_series monthly total for {n_checked} full Novembers (2000..2025)")
+    print(
+        f"  daily method == 05_series monthly total for {n_checked} full Novembers (2000..2025)")
     for r in sorted((r for r in rows if r["month_to_date"]), key=lambda r: r["area_id"] != FEATURE_AREA):
         src = "modis_converted" if r["modis_share"] == 1 else "viirs"
         print(f"  {r['area_id']:<10} {MTD_MONTH} MTD (Nov 1-{end.day}, {src}): current {r['current']:,.0f}"
@@ -181,7 +214,8 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
         for y in range(2000, int(MTD_MONTH[:4]) + 1):
             if (FEATURE_AREA, y) in mtd:
                 v, s = mtd[(FEATURE_AREA, y)]
-                line.append(f"{y}:{v:,.0f}{'m' if s == 'modis_converted' else ''}")
+                line.append(
+                    f"{y}:{v:,.0f}{'m' if s == 'modis_converted' else ''}")
         for i in range(0, len(line), 7):
             print("    " + "  ".join(line[i:i + 7]))
         print("    (m = converted MODIS year)")
@@ -190,22 +224,57 @@ def anomaly_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, e
 def main() -> None:
     regions = available_regions()
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--region", choices=regions + ["all"], default="all",
-                    help="region to process (default: all with a harmonized_<region>.parquet)")
+    selection = ap.add_mutually_exclusive_group()
+    selection.add_argument("--region", choices=regions + ["all"],
+                           help="whole region(s) to process (default: all)")
+    selection.add_argument("--preset", choices=sorted(PRESET_AREAS),
+                           help="generate a preset-area sidecar output")
+    ap.add_argument("--preset-input-dir", type=Path,
+                    help="folder containing clean_<preset>.parquet extracts")
+    ap.add_argument("--satellite-windows", type=Path,
+                    help="CSV containing the global satellite windows in section A")
     args = ap.parse_args()
+    if args.preset:
+        if not args.preset_input_dir or not args.satellite_windows:
+            ap.error("--preset requires --preset-input-dir and --satellite-windows")
+        if not args.satellite_windows.is_file():
+            ap.error(
+                f"satellite windows file not found: {args.satellite_windows}")
+        try:
+            region, clean_path = preset_inputs(
+                args.preset, args.preset_input_dir)
+        except (FileNotFoundError, ValueError) as exc:
+            ap.error(str(exc))
+        if region not in regions:
+            ap.error(
+                f"no harmonized_<region>.parquet is available for {region}")
+        runs = [(region, args.preset, clean_path)]
+        windows_csv = args.satellite_windows
+    else:
+        if args.preset_input_dir or args.satellite_windows:
+            ap.error("--preset-input-dir and --satellite-windows require --preset")
+        if not regions:
+            sys.exit(
+                f"ERROR: no harmonized_*.parquet in {PROCESSED}; run 05_series.py first")
+        selected = regions if args.region in (None, "all") else [args.region]
+        runs = [(region, None, None) for region in selected]
+        windows_csv = None
+
     if not regions:
-        sys.exit(f"ERROR: no harmonized_*.parquet in {PROCESSED}; run 05_series.py first")
+        sys.exit(
+            f"ERROR: no harmonized_*.parquet in {PROCESSED}; run 05_series.py first")
 
     con = duckdb.connect()
     con.execute(f"SET temp_directory = {q(INTERIM / '.duckdb_tmp')}")
     con.execute("SET enable_progress_bar = false")
-    windows = sat_windows(con)
+    windows = sat_windows(con, windows_csv)
     end = data_end(windows)
     print("satellite windows (pooled clean files): " + ", ".join(
         f"{s} {a}..{b}" for s, (_, a, b) in sorted(windows.items(), key=lambda kv: kv[1][1])))
-    print(f"month-to-date end N = {end} (last day all non-retired satellites have data)")
-    for region in (regions if args.region == "all" else [args.region]):
-        anomaly_region(con, region, windows, end)
+    print(
+        f"month-to-date end N = {end} (last day all non-retired satellites have data)")
+    for region, preset_id, clean_path in runs:
+        anomaly_region(con, region, windows, end, preset_id, clean_path)
 
 
 if __name__ == "__main__":

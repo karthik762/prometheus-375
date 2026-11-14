@@ -40,11 +40,23 @@ import argparse
 import datetime as dt
 import sys
 import time
+from pathlib import Path
 
 import duckdb
 import numpy as np
 
-from daily_counts import INTERIM, PROCESSED, REPO_ROOT, areas, build_daily, data_end, q, sat_windows
+from daily_counts import (
+    PRESET_AREAS,
+    INTERIM,
+    PROCESSED,
+    REPO_ROOT,
+    areas,
+    build_daily,
+    data_end,
+    preset_inputs,
+    q,
+    sat_windows,
+)
 
 ONSET_FRAC = 0.10
 SEASON_MONTHS = 4
@@ -56,7 +68,8 @@ MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
 
 
 def available_regions() -> list[str]:
-    have = lambda p: {f.stem.removeprefix(p) for f in INTERIM.glob(f"{p}*.parquet")}
+    def have(p): return {f.stem.removeprefix(p)
+                         for f in INTERIM.glob(f"{p}*.parquet")}
     return sorted(have("clean_") & have("fit_") & have("cell_zone_"))
 
 
@@ -72,17 +85,34 @@ def pick_season(con: duckdb.DuckDBPyConnection, area: str) -> tuple[tuple, list[
         FROM daily WHERE area_id = '{area}' AND year(d) BETWEEN {MEDIAN_YEARS[0]} AND {MEDIAN_YEARS[1]}
         GROUP BY ALL
     """).fetchall()
-    med = [float(np.median([t for m, _, t in rows if m == moy])) for moy in range(1, 13)]
-    best = max(range(12), key=lambda s: sum(med[(s + k) % 12] for k in range(SEASON_MONTHS)))
+    med = [float(np.median([t for m, _, t in rows if m == moy]))
+           for moy in range(1, 13)]
+    best = max(range(12), key=lambda s: sum(
+        med[(s + k) % 12] for k in range(SEASON_MONTHS)))
     sm, em = best + 1, (best + SEASON_MONTHS - 1) % 12 + 1
     return ((sm, 1), (em, None)), med  # None = last day of that month
 
 
-def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end: dt.date) -> None:
+def onset_region(
+    con: duckdb.DuckDBPyConnection,
+    region: str,
+    windows: dict,
+    end: dt.date,
+    preset_id: str | None = None,
+    preset_clean_path: Path | None = None,
+) -> None:
     t0 = time.time()
-    out = PROCESSED / f"onset_{region}.parquet"
-    out_daily = PROCESSED / f"onset_daily_{region}.parquet"
-    build_daily(con, region, windows, end)
+    out = (PROCESSED / f"onset_preset_{preset_id}.parquet" if preset_id
+           else PROCESSED / f"onset_{region}.parquet")
+    out_daily = (PROCESSED / f"onset_daily_preset_{preset_id}.parquet" if preset_id
+                 else PROCESSED / f"onset_daily_{region}.parquet")
+    if preset_id:
+        existing = [path for path in (out, out_daily) if path.exists()]
+        if existing:
+            raise FileExistsError("Refusing to overwrite preset onset outputs: "
+                                  + ", ".join(map(str, existing)))
+    build_daily(con, region, windows, end,
+                clean_path=preset_clean_path, preset_id=preset_id)
     first_day = con.execute("SELECT min(d) FROM daily").fetchone()[0]
 
     bad = con.execute("""
@@ -101,7 +131,7 @@ def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end
     """)
 
     rows, seasons_used = [], {}
-    for area, _ in areas(region):
+    for area, _ in areas(region, preset_id):
         if area in FIXED_SEASONS:
             spec, med = FIXED_SEASONS[area], None
         else:
@@ -113,30 +143,35 @@ def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end
         idx = {day: i for i, day in enumerate(d)}
 
         hist = []  # (season_year, total, onset_day) of complete seasons so far
-        onsets = []  # onset_day of earlier seasons (any completeness, onset found)
+        # onset_day of earlier seasons (any completeness, onset found)
+        onsets = []
         for y in range(first_day.year - 1, end.year + 1):
             (sm, sd), (em, ed) = spec
             start = dt.date(y, sm, sd)
             stop_y = y + (em < sm)  # season wraps the year end
-            stop = month_end(stop_y, em) if ed is None else dt.date(stop_y, em, ed)
+            stop = month_end(stop_y, em) if ed is None else dt.date(
+                stop_y, em, ed)
             if start < first_day or start > end:
                 continue
             complete = stop <= end
             i0, i1 = idx[start], idx[min(stop, end)]
             use_viirs = bool(np.all(nv[i0:i1 + 1] > 0))
             series = (v if use_viirs else m)[i0:i1 + 1].astype(float)
-            assert not np.isnan(series).any(), f"[{region}] {area} {y}: NaN in season series"
+            assert not np.isnan(series).any(
+            ), f"[{region}] {area} {y}: NaN in season series"
             cum = np.cumsum(series)
             total = float(cum[-1])
 
             prior_tot = [t for _, t in hist]
-            threshold = ONSET_FRAC * float(np.median(prior_tot)) if prior_tot else None
+            threshold = ONSET_FRAC * \
+                float(np.median(prior_tot)) if prior_tot else None
             onset_day = None
             if threshold and threshold > 0:
                 hit = np.nonzero(cum >= threshold)[0]
                 onset_day = int(hit[0]) if hit.size else None
             med_prior = float(np.median(onsets)) if onsets else None
-            shift = (onset_day - med_prior) if (onset_day is not None and med_prior is not None) else None
+            shift = (
+                onset_day - med_prior) if (onset_day is not None and med_prior is not None) else None
             # Partial season, threshold not reached yet: onset is at least the day after the
             # last data day, so the shift is at least this (null otherwise).
             shift_min = None
@@ -146,7 +181,9 @@ def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end
                 area_id=area, season_year=y, season_start=start, season_end=stop, complete=complete,
                 source="viirs" if use_viirs else "modis_converted", season_total=total,
                 n_prior_seasons=len(prior_tot), threshold=threshold,
-                onset_date=start + dt.timedelta(days=onset_day) if onset_day is not None else None,
+                onset_date=start +
+                dt.timedelta(
+                    days=onset_day) if onset_day is not None else None,
                 onset_day=onset_day, median_prior_onset_day=med_prior, onset_shift_days=shift,
                 onset_shift_min_days=shift_min))
             if complete:
@@ -158,11 +195,14 @@ def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end
     for r in rows:
         tag = f"[{region}] {r['area_id']} {r['season_year']}"
         if r["onset_day"] is not None:
-            assert r["season_start"] <= r["onset_date"] <= min(r["season_end"], end), tag
+            assert r["season_start"] <= r["onset_date"] <= min(
+                r["season_end"], end), tag
             if r["median_prior_onset_day"] is not None:
-                assert r["onset_shift_days"] is not None and np.isfinite(r["onset_shift_days"]), tag
+                assert r["onset_shift_days"] is not None and np.isfinite(
+                    r["onset_shift_days"]), tag
         if r["n_prior_seasons"] >= MIN_PRIOR:
-            assert r["threshold"] is not None and np.isfinite(r["threshold"]), tag
+            assert r["threshold"] is not None and np.isfinite(
+                r["threshold"]), tag
         assert np.isfinite(r["season_total"]) and r["season_total"] >= 0, tag
     assert len({(r["area_id"], r["season_year"]) for r in rows}) == len(rows)
 
@@ -197,13 +237,16 @@ def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end
         state = "complete" if last["complete"] else f"partial to {end}"
         print(f"  {area:<10} season {MONTHS[sm - 1]} {sd} -> {MONTHS[em - 1]} {ed or 'end'} ({how}); "
               f"{last['season_year']} ({state}, {last['source']}): {os_}")
-    if region == "india":
-        print(f"  {FEATURE_AREA} by season (threshold = 10% of median prior complete season total):")
-        print(f"    {'year':<6}{'src':<6}{'total':>10}{'thresh':>9}  {'onset':<11}{'day':>4}{'med':>6}{'shift':>7}")
+    if region == "india" and preset_id is None:
+        print(
+            f"  {FEATURE_AREA} by season (threshold = 10% of median prior complete season total):")
+        print(
+            f"    {'year':<6}{'src':<6}{'total':>10}{'thresh':>9}  {'onset':<11}{'day':>4}{'med':>6}{'shift':>7}")
         for r in rows:
             if r["area_id"] != FEATURE_AREA:
                 continue
-            fmt = lambda x, s: "" if x is None else format(x, s)
+
+            def fmt(x, s): return "" if x is None else format(x, s)
             print(f"    {r['season_year']:<6}{'V' if r['source'] == 'viirs' else 'M':<6}"
                   f"{r['season_total']:>10,.0f}{fmt(r['threshold'], '>9,.0f'):>9}  "
                   f"{str(r['onset_date'] or '-'):<11}{fmt(r['onset_day'], '>4'):>4}"
@@ -214,21 +257,49 @@ def onset_region(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end
 def main() -> None:
     regions = available_regions()
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--region", choices=regions + ["all"], default="all",
-                    help="region to process (default: all with clean + fit + cell_zone files)")
+    selection = ap.add_mutually_exclusive_group()
+    selection.add_argument("--region", choices=regions + ["all"],
+                           help="whole region(s) to process (default: all)")
+    selection.add_argument("--preset", choices=sorted(PRESET_AREAS),
+                           help="generate preset-area sidecar outputs")
+    ap.add_argument("--preset-input-dir", type=Path,
+                    help="folder containing clean_<preset>.parquet extracts")
+    ap.add_argument("--satellite-windows", type=Path,
+                    help="CSV containing the global satellite windows in section A")
     args = ap.parse_args()
-    if not regions:
-        sys.exit(f"ERROR: no region has clean + fit + cell_zone files in {INTERIM}")
+    if args.preset:
+        if not args.preset_input_dir or not args.satellite_windows:
+            ap.error("--preset requires --preset-input-dir and --satellite-windows")
+        if not args.satellite_windows.is_file():
+            ap.error(
+                f"satellite windows file not found: {args.satellite_windows}")
+        try:
+            region, clean_path = preset_inputs(
+                args.preset, args.preset_input_dir)
+        except (FileNotFoundError, ValueError) as exc:
+            ap.error(str(exc))
+        runs = [(region, args.preset, clean_path)]
+        windows_csv = args.satellite_windows
+    else:
+        if args.preset_input_dir or args.satellite_windows:
+            ap.error("--preset-input-dir and --satellite-windows require --preset")
+        if not regions:
+            sys.exit(
+                f"ERROR: no region has clean + fit + cell_zone files in {INTERIM}")
+        selected = regions if args.region in (None, "all") else [args.region]
+        runs = [(region, None, None) for region in selected]
+        windows_csv = None
     PROCESSED.mkdir(parents=True, exist_ok=True)
 
     con = duckdb.connect()
     con.execute(f"SET temp_directory = {q(INTERIM / '.duckdb_tmp')}")
     con.execute("SET enable_progress_bar = false")
-    windows = sat_windows(con)
+    windows = sat_windows(con, windows_csv)
     end = data_end(windows)
-    print(f"data end N = {end} (last day all non-retired satellites have data)")
-    for region in (regions if args.region == "all" else [args.region]):
-        onset_region(con, region, windows, end)
+    print(
+        f"data end N = {end} (last day all non-retired satellites have data)")
+    for region, preset_id, clean_path in runs:
+        onset_region(con, region, windows, end, preset_id, clean_path)
 
 
 if __name__ == "__main__":

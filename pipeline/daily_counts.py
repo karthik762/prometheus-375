@@ -27,6 +27,7 @@ treated as active-with-zero-fires, as 03_satfix does at month level.
 from __future__ import annotations
 
 import datetime as dt
+import csv
 from pathlib import Path
 
 import duckdb
@@ -36,25 +37,90 @@ INTERIM = REPO_ROOT / "data" / "interim"
 PROCESSED = REPO_ROOT / "data" / "processed"
 
 CELL_DEG = 0.25
-RETIRED = {"SNPP"}  # S-NPP stopped delivering 2026-11-02 (AGENTS.md hard facts)
+# S-NPP stopped delivering 2026-11-02 (AGENTS.md hard facts)
+RETIRED = {"SNPP"}
 PB_HR = {"lat": (27.5, 32.5), "lon": (73.5, 77.5)}  # same box as 04_fit
+PRESET_AREAS = {
+    "brazil_pantanal": ("brazil", (-60.0, -22.0, -55.0, -16.0)),
+    "australia_nsw": ("australia", (149.0, -37.5, 153.5, -31.5)),
+    "california": ("california", (-124.5, 32.5, -114.0, 42.0)),
+    "greece": ("greece", (20.0, 36.0, 27.0, 42.0)),
+}
 
 
 def q(path: Path) -> str:
     return "'" + str(path).replace("\\", "/").replace("'", "''") + "'"
 
 
-def areas(region: str) -> list[tuple[str, str]]:
+def preset_inputs(preset_id: str, preset_input_dir: Path) -> tuple[str, Path]:
+    """Resolve a preset clean extract and its full-region D4 lookup inputs."""
+    if preset_id not in PRESET_AREAS:
+        raise ValueError(f"Unknown preset area: {preset_id}")
+    region, _ = PRESET_AREAS[preset_id]
+    clean = preset_input_dir / f"clean_{preset_id}.parquet"
+    missing = [path for path in (clean, INTERIM / f"fit_{region}.parquet",
+                                 INTERIM / f"cell_zone_{region}.parquet")
+               if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            "Missing preset D6 inputs: " + ", ".join(map(str, missing)))
+    return region, clean
+
+
+def areas(region: str, preset_id: str | None = None) -> list[tuple[str, str]]:
     """(area_id, SQL predicate on cell-centre columns clat/clon)."""
+    if preset_id is not None:
+        source_region, (min_lon, min_lat, max_lon,
+                        max_lat) = PRESET_AREAS[preset_id]
+        if source_region != region:
+            raise ValueError(
+                f"Preset {preset_id} belongs to {source_region}, not {region}")
+        return [(preset_id, f"clon BETWEEN {min_lon} AND {max_lon} "
+                 f"AND clat BETWEEN {min_lat} AND {max_lat}")]
+
     out = [(region, "TRUE")]
     if region == "india":
         (a, b), (c, d) = PB_HR["lat"], PB_HR["lon"]
-        out.append(("pb_hr", f"clat BETWEEN {a} AND {b} AND clon BETWEEN {c} AND {d}"))
+        out.append(
+            ("pb_hr", f"clat BETWEEN {a} AND {b} AND clon BETWEEN {c} AND {d}"))
     return out
 
 
-def sat_windows(con: duckdb.DuckDBPyConnection) -> dict[str, tuple[str, dt.date, dt.date]]:
+def sat_windows(
+    con: duckdb.DuckDBPyConnection,
+    windows_csv: Path | None = None,
+) -> dict[str, tuple[str, dt.date, dt.date]]:
     """satellite -> (family, first date, last date), pooled over all regions' clean files."""
+    if windows_csv is not None:
+        header = ["satellite", "sensor_family",
+                  "first_acq_date", "last_acq_date"]
+        windows: dict[str, tuple[str, dt.date, dt.date]] = {}
+        in_global_section = False
+        with windows_csv.open(newline="", encoding="utf-8-sig") as stream:
+            for row in csv.reader(stream):
+                if not row:
+                    continue
+                row = [value.strip() for value in row]
+                if row == header:
+                    if windows:
+                        break
+                    in_global_section = True
+                    continue
+                if not in_global_section or row[0].startswith("#"):
+                    continue
+                if len(row) != 4:
+                    break
+                satellite, family, first, last = row
+                if satellite in windows:
+                    raise ValueError(
+                        f"Duplicate satellite window for {satellite}")
+                windows[satellite] = (family.lower(), dt.date.fromisoformat(first),
+                                      dt.date.fromisoformat(last))
+        if not windows:
+            raise ValueError(
+                f"No global satellite windows found in {windows_csv}")
+        return windows
+
     files = sorted(INTERIM.glob("clean_*.parquet"))
     assert files, f"no clean_*.parquet in {INTERIM}"
     rows = con.execute(f"""
@@ -69,14 +135,22 @@ def data_end(windows: dict) -> dt.date:
     return min(b for s, (_, _, b) in windows.items() if s not in RETIRED)
 
 
-def build_daily(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end: dt.date) -> None:
-    clean = INTERIM / f"clean_{region}.parquet"
+def build_daily(
+    con: duckdb.DuckDBPyConnection,
+    region: str,
+    windows: dict,
+    end: dt.date,
+    clean_path: Path | None = None,
+    preset_id: str | None = None,
+) -> None:
+    clean = clean_path or INTERIM / f"clean_{region}.parquet"
     cz = INTERIM / f"cell_zone_{region}.parquet"
     fit = INTERIM / f"fit_{region}.parquet"
 
     present = {r[0] for r in con.execute(
         f"SELECT DISTINCT satellite FROM read_parquet({q(clean)})").fetchall()}
-    con.execute("CREATE OR REPLACE TEMP TABLE sw (satellite VARCHAR, family VARCHAR, d0 DATE, d1 DATE)")
+    con.execute(
+        "CREATE OR REPLACE TEMP TABLE sw (satellite VARCHAR, family VARCHAR, d0 DATE, d1 DATE)")
     con.executemany("INSERT INTO sw VALUES (?, ?, ?, ?)",
                     [(s, f, a, b) for s, (f, a, b) in windows.items() if s in present])
 
@@ -105,10 +179,11 @@ def build_daily(con: duckdb.DuckDBPyConnection, region: str, windows: dict, end:
     assert no_zone == 0, f"[{region}] {no_zone:,} hotspots in cells missing from cell_zone"
     assert no_ratio == 0, f"[{region}] {no_ratio:,} MODIS hotspots without a D4 ratio"
 
+    selected_areas = areas(region, preset_id)
     area_sql = " UNION ALL ".join(
         f"SELECT '{a}' AS area_id, d, family, count(*)::DOUBLE AS n, sum(w)::DOUBLE AS nw "
-        f"FROM pz WHERE {pred} GROUP BY ALL" for a, pred in areas(region))
-    area_ids = ", ".join(f"('{a}')" for a, _ in areas(region))
+        f"FROM pz WHERE {pred} GROUP BY ALL" for a, pred in selected_areas)
+    area_ids = ", ".join(f"('{a}')" for a, _ in selected_areas)
     con.execute(f"""
         CREATE OR REPLACE TEMP TABLE daily AS
         WITH agg AS ({area_sql}),
