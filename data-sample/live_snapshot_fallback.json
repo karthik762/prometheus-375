@@ -1,0 +1,249 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "source": "snapshot_fallback",
+    "description": "Pre-packaged Punjab/Haryana NRT hotspot snapshot for offline/demo resilience"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.241, 30.892] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-14",
+        "acq_time": "0815",
+        "confidence": "high",
+        "frp": 24.8,
+        "bright_ti4": 341.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.312, 30.781] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-14",
+        "acq_time": "0745",
+        "confidence": "nominal",
+        "frp": 12.3,
+        "bright_ti4": 328.6
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.545, 30.912] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-14",
+        "acq_time": "0815",
+        "confidence": "high",
+        "frp": 38.2,
+        "bright_ti4": 349.1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.689, 31.145] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-14",
+        "acq_time": "0745",
+        "confidence": "nominal",
+        "frp": 15.6,
+        "bright_ti4": 332.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [74.982, 30.451] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-14",
+        "acq_time": "0815",
+        "confidence": "nominal",
+        "frp": 18.4,
+        "bright_ti4": 334.8
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.120, 30.340] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-14",
+        "acq_time": "0745",
+        "confidence": "high",
+        "frp": 42.1,
+        "bright_ti4": 352.4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.421, 30.120] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-13",
+        "acq_time": "0832",
+        "confidence": "nominal",
+        "frp": 14.2,
+        "bright_ti4": 329.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.812, 30.540] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-13",
+        "acq_time": "0801",
+        "confidence": "high",
+        "frp": 31.0,
+        "bright_ti4": 344.2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [76.120, 30.290] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-13",
+        "acq_time": "0832",
+        "confidence": "nominal",
+        "frp": 9.8,
+        "bright_ti4": 326.1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [76.350, 29.980] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-13",
+        "acq_time": "0801",
+        "confidence": "nominal",
+        "frp": 16.5,
+        "bright_ti4": 333.7
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.920, 31.250] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-12",
+        "acq_time": "0850",
+        "confidence": "high",
+        "frp": 45.3,
+        "bright_ti4": 355.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [74.750, 30.680] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-12",
+        "acq_time": "0820",
+        "confidence": "nominal",
+        "frp": 11.2,
+        "bright_ti4": 327.9
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.050, 30.820] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-12",
+        "acq_time": "0850",
+        "confidence": "nominal",
+        "frp": 20.1,
+        "bright_ti4": 336.4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.480, 31.420] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-12",
+        "acq_time": "0820",
+        "confidence": "high",
+        "frp": 29.4,
+        "bright_ti4": 342.8
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.720, 29.850] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-11",
+        "acq_time": "0910",
+        "confidence": "nominal",
+        "frp": 13.9,
+        "bright_ti4": 330.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [76.010, 29.720] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-11",
+        "acq_time": "0838",
+        "confidence": "nominal",
+        "frp": 17.8,
+        "bright_ti4": 335.2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [76.480, 29.510] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-11",
+        "acq_time": "0910",
+        "confidence": "high",
+        "frp": 33.6,
+        "bright_ti4": 346.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.180, 31.050] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-10",
+        "acq_time": "0755",
+        "confidence": "nominal",
+        "frp": 10.5,
+        "bright_ti4": 328.0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.390, 30.610] },
+      "properties": {
+        "satellite": "NOAA-20",
+        "acq_date": "2026-11-10",
+        "acq_time": "0828",
+        "confidence": "nominal",
+        "frp": 22.0,
+        "bright_ti4": 337.5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [75.630, 30.390] },
+      "properties": {
+        "satellite": "NOAA-21",
+        "acq_date": "2026-11-10",
+        "acq_time": "0755",
+        "confidence": "high",
+        "frp": 36.7,
+        "bright_ti4": 348.3
+      }
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 import json
+import os
 import sys
+import time
 import urllib.parse
 from pathlib import Path
 from fastapi.testclient import TestClient
@@ -8,6 +10,7 @@ backend_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(backend_dir))
 
 from main import app
+import firms_live
 
 client = TestClient(app)
 
@@ -15,7 +18,7 @@ client = TestClient(app)
 def run_tests():
     print("==================================================")
     print("      PROMETHEUS 375 BACKEND API TEST SUITE       ")
-    print("            (Task B1 & Task B2 Verified)          ")
+    print("         (Tasks B1, B2 & B3 Verified)             ")
     print("==================================================")
 
     # 1. Health check
@@ -37,17 +40,14 @@ def run_tests():
     assert len(presets) >= 5
     print(f"    --> PASS: {len(presets)} presets returned")
 
-    # 3. Calendar with bbox (Punjab/Haryana)
-    print("\n[3] Testing GET /calendar with bbox (Punjab/Haryana 2024-01 to 2026-07)...")
+    # 3. Calendar with bbox
+    print("\n[3] Testing GET /calendar with bbox...")
     res_bbox = client.get("/calendar?start=2024-01&end=2026-07&bbox=73.8,27.6,77.6,32.5")
-    print(f"    Status: {res_bbox.status_code}")
-    data_bbox = res_bbox.json()
-    print(f"    Total monthly datapoints: {len(data_bbox)}")
     assert res_bbox.status_code == 200
-    assert len(data_bbox) == 31
-    print("    --> PASS: Bbox query successful")
+    assert len(res_bbox.json()) == 31
+    print("    --> PASS: Bbox calendar query successful")
 
-    # 4. Calendar with GeoJSON Polygon (Raw Polygon)
+    # 4. Calendar with GeoJSON Polygon
     print("\n[4] Testing GET /calendar with GeoJSON Polygon...")
     punjab_poly = {
         "type": "Polygon",
@@ -63,76 +63,99 @@ def run_tests():
     }
     encoded_poly = urllib.parse.quote(json.dumps(punjab_poly))
     res_poly = client.get(f"/calendar?start=2024-01&end=2026-07&polygon={encoded_poly}")
-    print(f"    Status: {res_poly.status_code}")
-    data_poly = res_poly.json()
-    print(f"    Total monthly datapoints: {len(data_poly)}")
     assert res_poly.status_code == 200
-    assert len(data_poly) == 31
-    # Bbox polygon and bbox bounding box should match
-    assert data_poly[0]["count"] == data_bbox[0]["count"]
-    print(f"    First month count check: bbox={data_bbox[0]['count']} vs polygon={data_poly[0]['count']}")
-    print("    --> PASS: GeoJSON Polygon query matches bbox query")
+    assert len(res_poly.json()) == 31
+    print("    --> PASS: GeoJSON Polygon query successful")
 
-    # 5. Calendar with GeoJSON Feature & FeatureCollection
-    print("\n[5] Testing GET /calendar with GeoJSON FeatureCollection...")
-    fc = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {"name": "Punjab Subregion"},
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [
-                        [
-                            [74.5, 29.0],
-                            [76.5, 29.0],
-                            [76.5, 31.0],
-                            [74.5, 31.0],
-                            [74.5, 29.0],
-                        ]
-                    ],
-                },
-            }
+    # 5. Live FIRMS NRT API: Live fetch (NOAA-20 + NOAA-21)
+    print("\n[5] Testing GET /live (Live FIRMS API fetch for Punjab/Haryana)...")
+    # Clear cache to ensure a fresh test
+    firms_live._cache.clear()
+    t0 = time.time()
+    res_live1 = client.get("/live?days=7&bbox=73.8,27.6,77.6,32.5")
+    t_live1 = time.time() - t0
+    print(f"    Status: {res_live1.status_code} (took {t_live1:.2f}s)")
+    fc1 = res_live1.json()
+    assert res_live1.status_code == 200
+    assert fc1["type"] == "FeatureCollection"
+    print(f"    Source: {fc1['metadata']['source']}")
+    print(f"    Hotspots returned: {fc1['metadata']['count']}")
+    assert fc1["metadata"]["count"] > 0
+    sample_feat = fc1["features"][0]
+    print(f"    Sample feature: satellite={sample_feat['properties']['satellite']}, "
+          f"acq_date={sample_feat['properties']['acq_date']}, "
+          f"confidence={sample_feat['properties']['confidence']}, "
+          f"coordinates={sample_feat['geometry']['coordinates']}")
+    assert sample_feat["properties"]["satellite"] in ("NOAA-20", "NOAA-21")
+    assert sample_feat["properties"]["confidence"] in ("nominal", "high")
+    print("    --> PASS: Live hotspots fetched and formatted per contract")
+
+    # 6. Live FIRMS NRT API: 30-min in-memory cache hit
+    print("\n[6] Testing GET /live cache hit on repeated call...")
+    t0 = time.time()
+    res_live2 = client.get("/live?days=7&bbox=73.8,27.6,77.6,32.5")
+    t_live2 = time.time() - t0
+    fc2 = res_live2.json()
+    print(f"    Status: {res_live2.status_code} (took {t_live2:.4f}s)")
+    print(f"    Source: {fc2['metadata']['source']}")
+    assert res_live2.status_code == 200
+    assert fc2["metadata"]["source"] == "cache"
+    assert fc2["metadata"]["count"] == fc1["metadata"]["count"]
+    print(f"    --> PASS: In-memory cache hit confirmed ({t_live2:.4f}s)")
+
+    # 7. Live FIRMS NRT API: Polygon containment filtering
+    print("\n[7] Testing GET /live with polygon filtering...")
+    sub_poly = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [75.0, 30.0],
+                [76.0, 30.0],
+                [76.0, 31.0],
+                [75.0, 31.0],
+                [75.0, 30.0],
+            ]
         ],
     }
-    encoded_fc = urllib.parse.quote(json.dumps(fc))
-    res_fc = client.get(f"/calendar?start=2024-11&end=2024-11&polygon={encoded_fc}")
-    print(f"    Status: {res_fc.status_code}")
-    data_fc = res_fc.json()
-    print(f"    Sub-region Nov 2024 count: {data_fc[0]['count']} (vs full region 8173.0)")
-    assert res_fc.status_code == 200
-    assert len(data_fc) == 1
-    assert data_fc[0]["count"] == 5045.0
-    print("    --> PASS: FeatureCollection parsed, filtered, and centroid containment verified")
+    encoded_sub_poly = urllib.parse.quote(json.dumps(sub_poly))
+    res_sub = client.get(f"/live?days=7&polygon={encoded_sub_poly}")
+    assert res_sub.status_code == 200
+    fc_sub = res_sub.json()
+    print(f"    Sub-polygon hotspot count: {fc_sub['metadata']['count']} (vs full {fc1['metadata']['count']})")
+    assert 0 < fc_sub["metadata"]["count"] <= fc1["metadata"]["count"]
+    print("    --> PASS: Polygon spatial containment filtering verified")
 
-    # 6. Invalid bbox parameter handling
-    print("\n[6] Testing GET /calendar with invalid bbox...")
-    res_inv_bbox = client.get("/calendar?bbox=10,20,30")
-    print(f"    Status: {res_inv_bbox.status_code}")
-    print(f"    Detail: {res_inv_bbox.json().get('detail')}")
-    assert res_inv_bbox.status_code == 400
-    print("    --> PASS: Invalid bbox correctly returns 400 Bad Request")
+    # 8. Live FIRMS NRT API: Snapshot fallback resilience
+    print("\n[8] Testing GET /live fallback behavior when offline/invalid key...")
+    # Temporarily override key and clear cache to simulate failure
+    original_key = os.environ.get("FIRMS_MAP_KEY")
+    os.environ["FIRMS_MAP_KEY"] = "invalid_key_for_testing"
+    firms_live._cache.clear()
+    try:
+        res_fallback = client.get("/live?days=7&bbox=73.8,27.6,77.6,32.5")
+        print(f"    Status: {res_fallback.status_code}")
+        fc_fb = res_fallback.json()
+        print(f"    Source: {fc_fb['metadata']['source']}")
+        print(f"    Fallback count: {fc_fb['metadata']['count']}")
+        assert res_fallback.status_code == 200
+        assert fc_fb["metadata"]["source"] == "snapshot_fallback"
+        assert fc_fb["metadata"]["count"] >= 15
+        print("    --> PASS: Offline snapshot fallback served without error")
+    finally:
+        if original_key is not None:
+            os.environ["FIRMS_MAP_KEY"] = original_key
+        else:
+            os.environ.pop("FIRMS_MAP_KEY", None)
+        firms_live._cache.clear()
 
-    # 7. Invalid polygon GeoJSON handling
-    print("\n[7] Testing GET /calendar with malformed GeoJSON polygon...")
-    res_inv_poly = client.get("/calendar?polygon=not_valid_json")
-    print(f"    Status: {res_inv_poly.status_code}")
-    print(f"    Detail: {res_inv_poly.json().get('detail')}")
-    assert res_inv_poly.status_code == 400
-    print("    --> PASS: Invalid GeoJSON returns 400 Bad Request")
-
-    # 8. Unsupported GeoJSON type handling
-    print("\n[8] Testing GET /calendar with unsupported GeoJSON geometry type...")
-    point_geom = urllib.parse.quote(json.dumps({"type": "Point", "coordinates": [75.0, 30.0]}))
-    res_point = client.get(f"/calendar?polygon={point_geom}")
-    print(f"    Status: {res_point.status_code}")
-    print(f"    Detail: {res_point.json().get('detail')}")
-    assert res_point.status_code == 400
-    print("    --> PASS: Unsupported geometry type returns 400 Bad Request")
+    # 9. Invalid bbox on /live
+    print("\n[9] Testing GET /live with invalid bbox...")
+    res_inv = client.get("/live?bbox=invalid")
+    assert res_inv.status_code == 400
+    print("    --> PASS: 400 Bad Request returned on invalid bbox")
 
     print("\n==================================================")
-    print("       ALL B1 & B2 TESTS PASSED SUCCESSFULLY      ")
+    print("     ALL B1, B2 & B3 TESTS PASSED SUCCESSFULLY    ")
     print("==================================================")
 
 

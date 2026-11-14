@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 import duckdb
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
@@ -9,8 +9,10 @@ from pydantic import BaseModel
 
 try:
     from backend.spatial import build_spatial_filter, init_duckdb_spatial
+    from backend.firms_live import get_live_hotspots_geojson
 except ImportError:
     from spatial import build_spatial_filter, init_duckdb_spatial
+    from firms_live import get_live_hotspots_geojson
 
 load_dotenv()
 
@@ -187,6 +189,19 @@ def calendar(
 
     records = df.to_dict(orient="records")
     return records
+
+
+@app.get("/live")
+def live(
+    days: int = Query(7, ge=1, le=10, description="Number of days of NRT data (1 to 10)"),
+    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
+    polygon: Optional[str] = Query(None, description="GeoJSON polygon string"),
+) -> Dict[str, Any]:
+    """
+    Return near-real-time (NRT) active-fire hotspots from VIIRS NOAA-20 and NOAA-21.
+    Includes 30-min in-memory caching and offline snapshot fallback.
+    """
+    return get_live_hotspots_geojson(days=days, bbox=bbox, polygon=polygon)
 
 
 if __name__ == "__main__":
