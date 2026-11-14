@@ -302,31 +302,19 @@
   opacity: calc(var(--bg-tick, 0) * 0.35);
 }
 
-.sh-bg-swath {
-  opacity: 0.08;
-  animation: sh-bg-swath 12s linear infinite;
-}
-.sh-bg-swath.is-hi {
-  opacity: 0.08; /* × 0.8 gradient peak: worst case #B89C6B on floor glow + swath ≈ 4.9:1 */
-}
-@keyframes sh-bg-swath {
-  0% { transform: translateX(var(--from)); }
-  55%, 100% { transform: translateX(var(--to)); }
-}
-
 .sh-bg-track {
   fill: none;
-  stroke: #c9ccd8;
+  stroke: #b89c6b;
   stroke-width: 1;
   stroke-dasharray: 2 5;
   vector-effect: non-scaling-stroke;
-  opacity: 0.14;
+  opacity: 0.25;
 }
 .sh-bg-orbit.is-snpp .sh-bg-track {
-  opacity: calc(var(--bg-snpp, 0) * 0.14);
+  opacity: calc(var(--bg-snpp, 0) * 0.25);
 }
 .sh-bg-orbit.is-noaa .sh-bg-track {
-  opacity: calc(var(--bg-n20, 0) * 0.14);
+  opacity: calc(var(--bg-n20, 0) * 0.25);
 }
 .sh-bg-sat {
   opacity: calc(var(--vis, 1) * 0.35);
@@ -335,7 +323,7 @@
   opacity: 0.6;
 }
 .sh-bg-sat-core {
-  fill: #ffe3c4;
+  fill: #f4b37a;
 }
 .sh-bg-sat-lab,
 .sh-bg-sat-ret {
@@ -349,7 +337,7 @@
   opacity: calc(1 - var(--bg-retire, 0));
 }
 .sh-bg-sat-dead {
-  fill: #6b6f80;
+  fill: #5f677a;
   opacity: var(--bg-retire, 0);
 }
 .sh-bg-sat-ret {
@@ -369,7 +357,6 @@
   opacity: clamp(0, (var(--bg-ember, 0) - var(--t)) * var(--q), 1);
 }
 .sh-bg-ember {
-  fill: #e6863f;
   opacity: 0;
   animation: sh-bg-ember 9s linear infinite;
 }
@@ -608,7 +595,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .sh-bg-star.is-tw,
-  .sh-bg-swath,
   .sh-bg-ember {
     animation: none;
   }

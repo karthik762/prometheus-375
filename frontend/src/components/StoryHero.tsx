@@ -340,8 +340,6 @@ interface BgGeo {
   ticks: { x: number; y: number; text: string; anchor: 'start' | 'end' }[];
   planets: { x: number; y: number; r: number; near: boolean }[];
   embers: { x0: number; x1: number; y: number; rise: number };
-  hi: { cx: number; cy: number; rx: number; ry: number }; // where the chart sits (swath brightens)
-  angle: number; // swath tilt
 }
 
 const SAT_VIS = { all: '1', snpp: 'var(--bg-snpp, 0)', n20: 'var(--bg-n20, 0)', n21: 'var(--bg-n21, 0)' };
@@ -376,8 +374,6 @@ const BG_WIDE: BgGeo = {
     { x: 150, y: 780, r: 22, near: true },
   ],
   embers: { x0: 330, x1: 1270, y: 830, rise: 320 },
-  hi: { cx: 800, cy: 620, rx: 560, ry: 260 },
-  angle: -28,
 };
 
 const BG_NARROW: BgGeo = {
@@ -411,8 +407,6 @@ const BG_NARROW: BgGeo = {
     { x: 40, y: 600, r: 14, near: true },
   ],
   embers: { x0: 30, x1: 370, y: 670, rise: 240 },
-  hi: { cx: 200, cy: 560, rx: 230, ry: 230 },
-  angle: -34,
 };
 
 interface BgStar {
@@ -440,7 +434,7 @@ function makeBackdrop(g: BgGeo, small: boolean) {
     y: rand() * H,
     r: near ? 0.8 + rand() * 0.7 : 0.5 + rand() * 0.5, // ~1–2 px rendered
     o: near ? 0.15 + rand() * 0.2 : 0.08 + rand() * 0.12,
-    warm: rand() < 0.3,
+    warm: rand() < 0.1, // ≤10% get a faint amber tint
     tw: rand() < 0.15,
     delay: rand() * 6,
   });
@@ -472,8 +466,6 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
   const g = narrow ? BG_NARROW : BG_WIDE;
   const bd = useMemo(() => makeBackdrop(g, small), [g, small]);
   const id = (s: string) => `${uid}-bg-${s}`;
-  const diag = Math.hypot(g.w, g.h);
-  const swathW = narrow ? 120 : 240;
 
   const starLayer = (near: boolean) => (
     <div className={`sh-bg-layer ${near ? 'is-near' : 'is-far'}`}>
@@ -485,7 +477,7 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
             cx={s.x.toFixed(1)}
             cy={s.y.toFixed(1)}
             r={s.r.toFixed(2)}
-            fill={s.warm ? '#B89C6B' : '#C9CCD8'}
+            fill={s.warm ? '#FBCB9A' : '#C9CCD8'}
             style={vars({ '--so': s.o.toFixed(3), animationDelay: `${(-s.delay).toFixed(2)}s` })}
           />
         ))}
@@ -493,15 +485,15 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
           .filter((pl) => pl.near === near)
           .map((pl, i) => (
             <g key={`pl${i}`} transform={`translate(${pl.x} ${pl.y})`}>
-              <circle r={pl.r} fill={`url(#${id(near ? 'glow-n' : 'glow-f')})`} opacity="0.3" />
-              <path d={sparkle(pl.r * 0.42)} fill="#DDE4F5" opacity="0.32" />
+              <circle r={pl.r} fill={`url(#${id(near ? 'glow-n' : 'glow-f')})`} />
+              <path d={sparkle(pl.r * 0.42)} fill="#F4B37A" opacity="0.22" />
             </g>
           ))}
         <defs>
           <radialGradient id={id(near ? 'glow-n' : 'glow-f')}>
-            <stop offset="0" stopColor="#DDE4F5" stopOpacity="0.9" />
-            <stop offset="0.35" stopColor="#C9CCD8" stopOpacity="0.35" />
-            <stop offset="1" stopColor="#C9CCD8" stopOpacity="0" />
+            {/* Warm amber haze, peak 0.12: keeps #B89C6B labels ≥ 4.5:1 where it sits under them. */}
+            <stop offset="0" stopColor="#E6863F" stopOpacity="0.12" />
+            <stop offset="1" stopColor="#E6863F" stopOpacity="0" />
           </radialGradient>
         </defs>
       </svg>
@@ -534,29 +526,14 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
           <mask id={id('gridmask')} maskUnits="userSpaceOnUse" x="0" y="0" width={g.w} height={g.h}>
             <rect x="0" y="0" width={g.w} height={g.h} fill={`url(#${id('gridfade')})`} />
           </mask>
-          <linearGradient id={id('swath')} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#C9CCD8" stopOpacity="0" />
-            {/* Peak kept low: with the stage's floor glow, #B89C6B labels must stay ≥ 4.5:1. */}
-            <stop offset="0.5" stopColor="#C9CCD8" stopOpacity="0.8" />
-            <stop offset="1" stopColor="#C9CCD8" stopOpacity="0" />
-          </linearGradient>
-          <radialGradient
-            id={id('hi')}
-            gradientUnits="userSpaceOnUse"
-            cx={g.hi.cx}
-            cy={g.hi.cy}
-            r={g.hi.rx}
-            gradientTransform={`translate(${g.hi.cx} ${g.hi.cy}) scale(1 ${(g.hi.ry / g.hi.rx).toFixed(3)}) translate(${-g.hi.cx} ${-g.hi.cy})`}
-          >
-            <stop offset="0" stopColor="#fff" stopOpacity="1" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-          <mask id={id('himask')} maskUnits="userSpaceOnUse" x="0" y="0" width={g.w} height={g.h}>
-            <rect x="0" y="0" width={g.w} height={g.h} fill={`url(#${id('hi')})`} />
-          </mask>
           <radialGradient id={id('satglow')}>
-            <stop offset="0" stopColor="#FFE3C4" stopOpacity="0.9" />
-            <stop offset="1" stopColor="#FFE3C4" stopOpacity="0" />
+            <stop offset="0" stopColor="#E6863F" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#E6863F" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={id('ember')}>
+            <stop offset="0" stopColor="#F4B37A" />
+            <stop offset="0.45" stopColor="#F4B37A" />
+            <stop offset="1" stopColor="#E6863F" stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -581,23 +558,6 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
 
         {!reduced && (
           <>
-            {/* 3. scan swath; the masked copy brightens it where it crosses the chart */}
-            {[false, true].map((hi) => (
-              <g key={hi ? 'hi' : 'base'} mask={hi ? `url(#${id('himask')})` : undefined}>
-                <g transform={`translate(${g.w / 2} ${g.h / 2}) rotate(${g.angle})`}>
-                  <rect
-                    className={hi ? 'sh-bg-swath is-hi' : 'sh-bg-swath'}
-                    x={-swathW / 2}
-                    y={-diag / 2}
-                    width={swathW}
-                    height={diag}
-                    fill={`url(#${id('swath')})`}
-                    style={vars({ '--from': `${-(diag / 2 + swathW)}px`, '--to': `${diag / 2 + swathW}px` })}
-                  />
-                </g>
-              </g>
-            ))}
-
             {/* 2. satellite tracks */}
             {g.orbits.map((o) => (
               <g key={o.key} className={`sh-bg-orbit is-${o.key}`}>
@@ -605,7 +565,7 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
                 {o.sats.map((s) => (
                   <g key={s.name} className="sh-bg-sat" style={vars({ '--vis': s.vis })}>
                     <animateMotion dur={`${o.dur}s`} begin={`${s.begin}s`} repeatCount="indefinite" path={o.d} />
-                    <circle r={g.font * 0.75} fill={`url(#${id('satglow')})`} className="sh-bg-sat-glow" />
+                    <circle r={g.font * 0.55} fill={`url(#${id('satglow')})`} className="sh-bg-sat-glow" />
                     <circle r={g.font * 0.2} className="sh-bg-sat-core" />
                     {o.key === 'snpp' && <circle r={g.font * 0.2} className="sh-bg-sat-dead" />}
                     <text className="sh-bg-sat-lab" x={g.font * 0.8} y={-g.font * 0.6} fontSize={g.font}>
@@ -633,7 +593,8 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
                     className="sh-bg-ember"
                     cx={e.x.toFixed(1)}
                     cy={g.embers.y}
-                    r={e.r.toFixed(2)}
+                    r={(e.r * 1.8).toFixed(2)}
+                    fill={`url(#${id('ember')})`}
                     style={vars({
                       '--dx': `${e.dx.toFixed(1)}px`,
                       '--rise': `${-g.embers.rise}px`,
@@ -1185,7 +1146,7 @@ export default function StoryHero() {
               <stop offset="1" stopColor="#FFE3C4" stopOpacity="0" />
             </linearGradient>
             <radialGradient id={`${uid}-ember`}>
-              <stop offset="0" stopColor="#FFE3C4" />
+              <stop offset="0" stopColor="#F4B37A" />
               <stop offset="0.35" stopColor="#F4B37A" stopOpacity="0.9" />
               <stop offset="1" stopColor="#E6863F" stopOpacity="0" />
             </radialGradient>
