@@ -25,8 +25,8 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D6** P — 07_anomaly.py + 08_onset.py: median/p10/p90/z, onset shift days — after D3 — due Sat 20:00 — done 15:30 by Rishitha (96a0709); outputs anomaly_<region>.parquet, onset_<region>.parquet, onset_daily_<region>.parquet in data/processed/
 - [ ] **B3** K — /live: FIRMS NOAA-20 + NOAA-21 NRT, 30-min cache, snapshot fallback — after K2, B1 — due Sat 18:00
 - [ ] **B4** P — /anomaly endpoint (reads anomaly table) (help: Karthik) — after D6, B2 — due Sat 20:00 — reassigned to Karthik 15:43, **Ongoing**
-- [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00 — **Testing** (Snehitha, 18:05): components/calendar/BurnCalendar.tsx — fire palette default (viridis toggle), MODIS hatching, 2000→current month, no-data vs zero, month-to-date flag, uncertainty in tooltip. Needs a run on real harmonized.parquet (backend still serves data-sample)
-- [ ] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00 — **Testing**: built on mock (0b9fbc6); verify against Karthik's real /anomaly (cb92eb6)
+- [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00 — **Testing** (Snehitha): checklist 11/11 pass across live backend + offline real Punjab series; rows = years 2001→now, cols = months; fire/viridis/cividis toggle; hatching verified on real series (2001–2011 + Jan 2012). Re-run #11 on backend once full harmonized.parquet is in data/processed/, then R marks Finished
+- [ ] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00 — **In review**: mock checklist 6/6 pass (slider, milestones, card follows month, sample badge, cell→slider, phone). Card handles onset_shift_days=null (backend returns null) and month-to-date. Stays In review until verified on Karthik's /anomaly with full data
 
 ## Integration
 - [ ] **I1** K — Integration #1: real harmonized.parquet into backend + UI (help: Rishitha, Poojitha, Snehitha) — after D5, B2, F3 — due Sat 21:00

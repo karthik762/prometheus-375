@@ -1,24 +1,33 @@
-export type ColorScaleType = 'fire' | 'viridis';
+export type ColorScaleType = 'fire' | 'viridis' | 'cividis';
+
+const NO_FIRE = '#1b1c2b'; // count 0
 
 // Fire ramp steps: 0 -> very low -> low -> medium -> high -> extreme
-const FIRE_RAMP = [
-  '#1b1c2b', // 0 / nodata
-  '#5A1F00', // low
-  '#8F3A0A', // moderate-low
-  '#C45A1E', // moderate
-  '#E6863F', // high
-  '#F4B37A', // extreme
+const FIRE_RAMP = [NO_FIRE, '#5A1F00', '#8F3A0A', '#C45A1E', '#E6863F', '#F4B37A'];
+
+// Viridis (perceptually uniform & colorblind-safe). Lowest step starts a bit
+// above viridis(0) so quiet months stay visible against the dark background.
+const VIRIDIS_RAMP = [NO_FIRE, '#472d7b', '#3b528b', '#21918c', '#5ec962', '#fde725'];
+
+// Cividis (optimised for red-green colour-vision deficiency)
+const CIVIDIS_RAMP = [NO_FIRE, '#2d4370', '#575d6d', '#7c7b78', '#b5a36f', '#fee838'];
+
+const RAMPS: Record<ColorScaleType, string[]> = {
+  fire: FIRE_RAMP,
+  viridis: VIRIDIS_RAMP,
+  cividis: CIVIDIS_RAMP,
+};
+
+export const COLOR_SCALES: { id: ColorScaleType; label: string }[] = [
+  { id: 'fire', label: 'Fire' },
+  { id: 'viridis', label: 'Viridis' },
+  { id: 'cividis', label: 'Cividis' },
 ];
 
-// Viridis ramp steps (perceptually uniform & colorblind-safe)
-const VIRIDIS_RAMP = [
-  '#1b1c2b', // 0 / nodata
-  '#440154', // dark purple
-  '#3b528b', // blue
-  '#21918c', // teal
-  '#5ec962', // green
-  '#fde725', // bright yellow
-];
+/** Mid-ramp swatch, used for the active toggle button. */
+export function getScaleAccent(scale: ColorScaleType): string {
+  return RAMPS[scale][3];
+}
 
 /**
  * Returns color hex string for a given count and max count across the dataset.
@@ -29,11 +38,9 @@ export function getHeatmapColor(
   maxCount: number,
   scale: ColorScaleType = 'fire'
 ): string {
-  if (count <= 0) {
-    return scale === 'fire' ? FIRE_RAMP[0] : VIRIDIS_RAMP[0];
-  }
+  const ramp = RAMPS[scale];
+  if (count <= 0) return ramp[0];
 
-  const ramp = scale === 'fire' ? FIRE_RAMP : VIRIDIS_RAMP;
   const safeMax = Math.max(maxCount, 1);
   // Sqrt scaling enhances contrast across dynamic ranges (100 to 30,000)
   const norm = Math.min(1, Math.sqrt(count) / Math.sqrt(safeMax));
@@ -49,7 +56,7 @@ export function getHeatmapColor(
  * Returns the color steps array for rendering the legend
  */
 export function getRampLegendSteps(scale: ColorScaleType = 'fire'): { label: string; color: string }[] {
-  const ramp = scale === 'fire' ? FIRE_RAMP : VIRIDIS_RAMP;
+  const ramp = RAMPS[scale];
   return [
     { label: '0', color: ramp[0] },
     { label: 'Low', color: ramp[1] },

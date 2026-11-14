@@ -23,7 +23,8 @@ export interface Anomaly {
   p90: number;
   z_score: number;
   percentile: number;
-  onset_shift_days: number;
+  /** null when the season hasn't started yet / no onset for this area (contract: Optional) */
+  onset_shift_days: number | null;
   is_month_to_date?: boolean;
 }
 

@@ -33,7 +33,7 @@ export const CalendarLegend: React.FC = () => {
             }}
           />
           <span style={{ color: 'var(--color-text-secondary)' }}>
-            Hatched: Estimated from MODIS (2000–2011) ± uncertainty
+            Hatched: Estimated from MODIS (2001–2011) ± uncertainty
           </span>
         </div>
 

@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
             Calibration Architecture
           </div>
           <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-tertiary)', lineHeight: 1.6 }}>
-            0.25° spatial grid cells aggregated into monthly per-satellite averages. Historical MODIS series (2000–2011) are scaled using regional cross-sensor transfer ratios with empirical 90% uncertainty intervals.
+            0.25° spatial grid cells aggregated into monthly per-satellite averages. Historical MODIS series (2001–2011) are scaled using regional cross-sensor transfer ratios with empirical 90% uncertainty intervals.
           </p>
         </div>
       </div>

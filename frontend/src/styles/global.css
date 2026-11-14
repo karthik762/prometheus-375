@@ -171,6 +171,28 @@ button {
   }
 }
 
+/* Phones: drop the centre nav links and the duplicate download button so the
+   header (logo + palette toggle) fits in ~390px */
+@media (max-width: 720px) {
+  .nav-links,
+  .nav-download {
+    display: none !important;
+  }
+
+  .palette-btn {
+    padding: 4px 5px !important;
+    font-size: 0.6875rem !important;
+  }
+
+  .nav-inner {
+    padding: 0 var(--space-md) !important;
+  }
+
+  .nav-wordmark {
+    font-size: 1.05rem !important;
+  }
+}
+
 /* Custom Hatched Texture for MODIS converted cells */
 .hatched-cell {
   background-image: repeating-linear-gradient(
