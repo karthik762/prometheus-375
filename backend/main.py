@@ -10,9 +10,11 @@ from pydantic import BaseModel
 try:
     from backend.spatial import build_spatial_filter, init_duckdb_spatial
     from backend.firms_live import get_live_hotspots_geojson
+    from backend.anomaly import get_anomaly_metrics
 except ImportError:
     from spatial import build_spatial_filter, init_duckdb_spatial
     from firms_live import get_live_hotspots_geojson
+    from anomaly import get_anomaly_metrics
 
 load_dotenv()
 
@@ -40,6 +42,8 @@ def get_parquet_path() -> str:
 
     # Check common relative locations
     default_candidates = [
+        "data/processed/harmonized.parquet",
+        "../data/processed/harmonized.parquet",
         "../data-sample/harmonized_sample.parquet",
         "data-sample/harmonized_sample.parquet",
         str(Path(__file__).resolve().parent.parent / "data-sample" / "harmonized_sample.parquet"),
@@ -72,12 +76,22 @@ class CalendarEntry(BaseModel):
     uncertainty_hi: float
 
 
-# Presets per project scope
+class AnomalyResponse(BaseModel):
+    current: float
+    median: float
+    p10: float
+    p90: float
+    z_score: float
+    percentile: float
+    onset_shift_days: Optional[float] = None
+
+
+# Presets per project scope & DECISIONS.md (pb_hr 27.5-32.5N, 73.5-77.5E)
 PRESETS: List[dict] = [
     {
         "id": "punjab_haryana",
         "name": "Punjab & Haryana (India)",
-        "bbox": [73.8, 27.6, 77.6, 32.5],
+        "bbox": [73.5, 27.5, 77.5, 32.5],
     },
     {
         "id": "brazil_pantanal",
@@ -114,7 +128,7 @@ def health():
 
 @app.get("/presets", response_model=List[Preset])
 def presets():
-    """Return preset region bounding boxes."""
+    """Return preset region bounding boxes aligned with DECISIONS.md."""
     return PRESETS
 
 
@@ -202,6 +216,25 @@ def live(
     Includes 30-min in-memory caching and offline snapshot fallback.
     """
     return get_live_hotspots_geojson(days=days, bbox=bbox, polygon=polygon)
+
+
+@app.get("/anomaly", response_model=AnomalyResponse)
+def anomaly(
+    month: str = Query(..., description="Target month in YYYY-MM format"),
+    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
+    polygon: Optional[str] = Query(None, description="GeoJSON polygon string"),
+):
+    """
+    Return burning-activity anomaly metrics (current vs climatological baseline)
+    and season onset shift for the specified month and area.
+    """
+    parquet_path = get_parquet_path()
+    return get_anomaly_metrics(
+        month=month,
+        bbox=bbox,
+        polygon=polygon,
+        parquet_path=parquet_path,
+    )
 
 
 if __name__ == "__main__":
