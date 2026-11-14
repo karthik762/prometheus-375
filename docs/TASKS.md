@@ -15,8 +15,8 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D2** R — 02_grid.py: 0.25° cell x month x satellite counts (help: Poojitha) — after D1 — due Sat 15:00 — done 12:28 (a194171), all 5 regions, totals asserted. Non-India regions have no NOAA-20/21 (not downloaded, no zero rows) → SNPP is their only VIIRS.
 - [x] **B1** K — FastAPI skeleton: /health, /presets, /calendar on sample data — after K1, K5 — due Sat 13:00 — done (147b37a)
 - [x] **B2** K — DuckDB spatial polygon/bbox filter on cell centroids (help: Snehitha) — after B1 — due Sat 15:00 — done (346c0f9)
-- [ ] **F1** S — React+Vite shell, MapLibre map, presets dropdown, lat/long input — after K4 — due Sat 13:00
-- [ ] **F2** S — Polygon draw tool + typed api.ts client (mock JSON per contract) — after F1, K5 — due Sat 15:00
+- [x] **F1** S — React+Vite shell, MapLibre map, presets dropdown, lat/long input — after K4 — due Sat 13:00 — done (0b9fbc6)
+- [x] **F2** S — Polygon draw tool + typed api.ts client (mock JSON per contract) — after F1, K5 — due Sat 15:00 — done (0b9fbc6); mock used only when VITE_API_URL is empty
 
 ## Build 2
 - [x] **D3** R — 03_satfix.py: per-satellite average; S-NPP vs NOAA-20/21 overlap check — after D2 — due Sat 17:00 — done 13:08 (e69d4e8). India overlap: SNPP/N20 median 0.976 r=0.998; N21/N20 0.941 r=0.999.
@@ -26,7 +26,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [ ] **B3** K — /live: FIRMS NOAA-20 + NOAA-21 NRT, 30-min cache, snapshot fallback — after K2, B1 — due Sat 18:00
 - [ ] **B4** P — /anomaly endpoint (reads anomaly table) (help: Karthik) — after D6, B2 — due Sat 20:00 — reassigned to Karthik 15:43, **Ongoing**
 - [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00
-- [ ] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00
+- [ ] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00 — **Testing**: built on mock (0b9fbc6); verify against Karthik's real /anomaly (cb92eb6)
 
 ## Integration
 - [ ] **I1** K — Integration #1: real harmonized.parquet into backend + UI (help: Rishitha, Poojitha, Snehitha) — after D5, B2, F3 — due Sat 21:00
@@ -35,7 +35,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D7** P — International regions: Amazon, California, Australia, Indonesia (help: Rishitha) — after D5 — due Sun 02:00 — done 15:46 via D1–D6 runs: Brazil (incl. Amazon), Australia, California, Greece; Indonesia dropped (never downloaded)
 - [ ] **B5** K — /export.csv, /export_analytics.csv, /validation (help: Poojitha) — after D5, B2 — due Sat 23:00
 - [ ] **B6** K — Deploy backend to Render (parquet bundled), share URL — after I1 — due Sat 23:30
-- [ ] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00
+- [ ] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00 — **Waiting on dependency**: live layer + CSV links built (0b9fbc6); test /live against B3, downloads wait on B5
 - [ ] **F6** R — Before/after proof chart + uncertainty bands — after B5 — due Sun 01:00
 - [ ] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30
 
