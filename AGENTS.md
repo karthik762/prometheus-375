@@ -18,7 +18,7 @@ Deadline: **submit by Sun Nov 15, 23:00 IST** (portal closes 23:59).
 /data-sample  fake files matching the contract (use until real data lands)
 /docs      AGENTS.md, roles/, TASKS.md, DECISIONS.md, HANDOFF.md
 ```
-Deploy: frontend → Vercel, backend → Render (parquet bundled). Fallback UI: Streamlit (decide Sun 10:00).
+Deploy: frontend → Vercel, backend → Render (parquet bundled). **Karthik owns the repo and both deploys** (accounts linked to his GitHub); everyone else just pushes to `main`. Fallback UI: Streamlit (decide Sun 10:00).
 
 ## The contract (frozen at 11:00 Sat — changing it needs all 4 to agree)
 **Parquet `harmonized.parquet` columns:**
@@ -56,8 +56,8 @@ Deploy: frontend → Vercel, backend → Render (parquet bundled). Fallback UI: 
 |---|---|---|---|
 | Rishitha | Data + Frontend | Data pipeline (clean, grid, satfix, fit); frontend charts (heatmap, before/after) | roles/data-lead.md, roles/frontend.md |
 | Poojitha | Data + Backend | Series, validation, anomalies/onset, intl regions; /anomaly endpoint; slides | roles/data-analyst.md, roles/backend.md |
-| Karthik | Backend | Backend lead: FastAPI, DuckDB filter, /live, exports, Render, repo, README | roles/backend.md |
-| Snehitha | Frontend + Backend | Frontend lead: map, draw, cards, live layer, Vercel, polish, demo video; helps on DuckDB filter | roles/frontend.md, roles/backend.md |
+| Karthik | Backend + Deploy | Backend lead; **owns the GitHub repo and ALL deploys** (Render backend + Vercel frontend, env vars, URLs); README | roles/backend.md |
+| Snehitha | Frontend + Backend | Frontend lead: map, draw, cards, live layer, polish, demo video; helps Karthik with the Vercel deploy and the DuckDB filter | roles/frontend.md, roles/backend.md |
 
 Task-level ownership, dependencies and status live in `Prometheus375_Task_Tracker.xlsx` (and TASKS.md mirrors it). Initials: R, P, K, S.
 

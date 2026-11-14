@@ -1,8 +1,29 @@
-.env 
-__pycache__/ 
-*.pyc 
-.venv/ 
-venv/ 
-node_modules/ 
-dist/ 
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# node
+node_modules/
+dist/
+.vercel/
+
+# data: raw FIRMS downloads are too big for GitHub (100 MB limit) - share via Drive
+data/raw/
+data/interim/
+*.zip
+DL_FIRE_*/
+fire_archive_*.csv
+fire_nrt_*.csv
+# keep small sample files committed
+!data-sample/*
+
 .DS_Store
+Thumbs.db

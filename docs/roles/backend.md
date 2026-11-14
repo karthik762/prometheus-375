@@ -1,5 +1,5 @@
 # Role: Backend + UI support
-Paste after AGENTS.md. You own `/backend` and the Render deploy.
+Paste after AGENTS.md. You own `/backend`. Karthik also owns the GitHub repo and BOTH deploys (Render backend + Vercel frontend).
 
 ## Your AI's job
 FastAPI + DuckDB (spatial extension) serving the contract endpoints exactly. Typed Pydantic responses. CORS open for the Vercel domain. Read parquet from `backend/data/`; start on `data-sample/` until real data lands.

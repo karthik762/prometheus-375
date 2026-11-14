@@ -1,0 +1,9 @@
+fastapi 
+uvicorn 
+duckdb 
+httpx 
+pydantic 
+python-dotenv 
+shapely 
+pandas 
+pyarrow
