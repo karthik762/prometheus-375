@@ -25,11 +25,11 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D6** P — 07_anomaly.py + 08_onset.py: median/p10/p90/z, onset shift days — after D3 — due Sat 20:00 — done 15:30 by Rishitha (96a0709); outputs anomaly_<region>.parquet, onset_<region>.parquet, onset_daily_<region>.parquet in data/processed/
 - [ ] **B3** K — /live: FIRMS NOAA-20 + NOAA-21 NRT, 30-min cache, snapshot fallback — after K2, B1 — due Sat 18:00
 - [ ] **B4** P — /anomaly endpoint (reads anomaly table) (help: Karthik) — after D6, B2 — due Sat 20:00 — reassigned to Karthik 15:43, **Ongoing**
-- [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00 — **Testing** (Snehitha): checklist 11/11 pass across live backend + offline real Punjab series; rows = years 2001→now, cols = months; fire/viridis/cividis toggle; hatching verified on real series (2001–2011 + Jan 2012). Re-run #11 on backend once full harmonized.parquet is in data/processed/, then R marks Finished
+- [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00 — **Testing → ready for R to mark Finished**: checklist 11/11 pass on the real backend (I1 data), incl. #11 hatching 2001–2011 + Jan 2012 via /calendar; Brazil preset returns real data
 - [x] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00 — done (6b417df): mock 6/6 + verified on Karthik's live /anomaly (cb92eb6) — slider, milestones, card follows month, badge hides off-mock, cell→slider, phone. Open backend issue: anomaly.py max(std, 1.0) gives z = −1262/−4823 with 1 prior year (sample data) → K
 
 ## Integration
-- [ ] **I1** K — Integration #1: real harmonized.parquet into backend + UI (help: Rishitha, Poojitha, Snehitha) — after D5, B2, F3 — due Sat 21:00
+- [x] **I1** K — Integration #1: real harmonized.parquet into backend + UI (help: Rishitha, Poojitha, Snehitha) — after D5, B2, F3 — due Sat 21:00 — done: real outputs in backend/data (ceece41, Rishitha) + backend wiring (fbe2e76, Karthik); UI verified on real data (F3 11/11, F4 6/6)
 
 ## Build 3
 - [x] **D7** P — International regions: Amazon, California, Australia, Indonesia (help: Rishitha) — after D5 — due Sun 02:00 — done 15:46 via D1–D6 runs: Brazil (incl. Amazon), Australia, California, Greece; Indonesia dropped (never downloaded)
