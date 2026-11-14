@@ -69,7 +69,7 @@ def read_precomputed_anomaly(
     if not anomaly_path:
         return None
 
-    con = duckdb.connect(database=":memory:", read_only=True)
+    con = duckdb.connect(database=":memory:", read_only=False)
     try:
         # 1. Fetch anomaly row
         q_anomaly = """
@@ -227,7 +227,7 @@ def compute_on_the_fly_anomaly(
                 onset_path = find_precomputed_file("onset", region="india")
                 if onset_path:
                     year = int(month.split("-")[0])
-                    con_o = duckdb.connect(database=":memory:", read_only=True)
+                    con_o = duckdb.connect(database=":memory:", read_only=False)
                     try:
                         q_o = """
                             SELECT onset_shift_days, onset_shift_min_days
