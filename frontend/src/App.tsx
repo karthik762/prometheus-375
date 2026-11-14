@@ -2,6 +2,7 @@ import React from 'react';
 import { SelectionProvider } from './hooks/useSelection';
 import { NavBar } from './components/layout/NavBar';
 import { Hero } from './components/layout/Hero';
+import StoryHero from './components/StoryHero';
 import { Footer } from './components/layout/Footer';
 import { FireMap } from './components/map/FireMap';
 import { BurnCalendar } from './components/calendar/BurnCalendar';
@@ -12,15 +13,21 @@ import { DatasetCoverSection } from './components/data/DatasetCover';
 import { Reveal } from './components/ui/Reveal';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
+// Scroll-story hero is the default; set VITE_USE_STORY_HERO=false to fall back to the original Hero.
+const USE_STORY_HERO = import.meta.env.VITE_USE_STORY_HERO !== 'false';
+
+// Height of the sticky NavBar (its header is 64px). StoryHero offsets its sticky stage by this.
+const appVars = { '--nav-height': '64px' } as React.CSSProperties;
+
 export const AppContent: React.FC = () => {
   return (
-    <div className="app-container">
+    <div className="app-container" style={appVars}>
       {/* 1. Sticky Navigation Bar with Cropped Shuttle Logo */}
       <NavBar />
 
       <main className="main-content">
         {/* 2. Hero Mission & Black Marble Nighttime Lights Globe */}
-        <Hero />
+        {USE_STORY_HERO ? <StoryHero /> : <Hero />}
 
         {/* 3. Explore: Preset Selection + Interactive Geographic Map */}
         <Reveal>

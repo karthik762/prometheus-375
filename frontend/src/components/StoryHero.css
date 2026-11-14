@@ -6,22 +6,22 @@
 .sh-section {
   position: relative;
   height: 900vh;
-  background: #0d0e18;
-  color: #ffe3c4;
+  background: var(--color-bg-base, #0d0e18);
+  color: var(--color-text-primary, #ffe3c4);
 }
 
 .sh-stage {
   --p: 0;
   position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100svh;
+  top: var(--nav-height, 0px); /* sit just below the app's sticky NavBar */
+  height: calc(100vh - var(--nav-height, 0px));
+  height: calc(100svh - var(--nav-height, 0px));
   overflow: hidden;
   isolation: isolate; /* the backdrop's z-index:-1 stays inside the stage, above its bg */
   display: flex;
   flex-direction: column;
-  background: radial-gradient(ellipse 70% 45% at 50% 100%, rgba(143, 58, 10, 0.3), rgba(13, 14, 24, 0) 100%),
-    #0d0e18;
+  background: radial-gradient(ellipse 70% 45% at 50% 100%, rgba(143, 58, 10, 0.3), transparent 100%),
+    var(--color-bg-base, #0d0e18);
 }
 
 /* ------------------------------------------------------------------------------ copy */
@@ -51,7 +51,7 @@
   font-size: clamp(1.75rem, 4.2vw, 4rem);
   line-height: 1.06;
   letter-spacing: -0.02em;
-  color: #ffe3c4;
+  color: var(--color-text-primary, #ffe3c4);
   opacity: var(--lo);
   transform: translateY(calc((1 - var(--lo)) * 0.35em));
   will-change: opacity, transform;
@@ -81,11 +81,11 @@
   min-height: 44px;
   padding: 0 22px;
   border-radius: 999px;
-  border: 1px solid #b89c6b;
+  border: 1px solid var(--color-gold, #b89c6b);
   font-family: var(--font-sans, "Inter", system-ui, sans-serif);
   font-size: 1rem;
   font-weight: 500;
-  color: #ffe3c4;
+  color: var(--color-text-primary, #ffe3c4);
   text-decoration: none;
   background: transparent;
   transition: background-color 0.15s, color 0.15s;
@@ -96,7 +96,7 @@
 .sh-btn--primary {
   background: #e6863f;
   border-color: #e6863f;
-  color: #0d0e18;
+  color: var(--color-bg-base, #0d0e18);
 }
 .sh-btn--primary:hover {
   background: #f4b37a;
@@ -122,7 +122,7 @@
   font-family: var(--font-serif, "Fraunces", Georgia, serif);
   font-size: clamp(2.6rem, 6vw, 5.6rem);
   line-height: 1;
-  color: #ffe3c4;
+  color: var(--color-text-primary, #ffe3c4);
 }
 .sh-stat-pct {
   display: inline-block;
@@ -138,7 +138,7 @@
   font-family: var(--font-sans, "Inter", system-ui, sans-serif);
   font-size: 0.85rem;
   line-height: 1.45;
-  color: #b89c6b;
+  color: var(--color-gold, #b89c6b);
 }
 
 .sh-through {
@@ -149,7 +149,7 @@
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
-  color: #b89c6b;
+  color: var(--color-gold, #b89c6b);
 }
 
 /* Skip intro (top-right) and the beat rail (right edge). */
@@ -162,17 +162,17 @@
   padding: 0 16px;
   border: 1px solid rgba(184, 156, 107, 0.45);
   border-radius: 999px;
-  background: rgba(13, 14, 24, 0.6);
+  background: color-mix(in srgb, var(--color-bg-base, #0d0e18) 60%, transparent);
   font-family: var(--font-sans, "Inter", system-ui, sans-serif);
   font-size: 0.8rem;
   font-weight: 500;
-  color: #b89c6b;
+  color: var(--color-gold, #b89c6b);
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
 .sh-skip:hover {
-  color: #ffe3c4;
-  border-color: #b89c6b;
+  color: var(--color-text-primary, #ffe3c4);
+  border-color: var(--color-gold, #b89c6b);
 }
 
 .sh-rail {
@@ -199,7 +199,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #b89c6b;
+  background: var(--color-gold, #b89c6b);
   opacity: 0.5;
   transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
 }
@@ -296,7 +296,7 @@
   vector-effect: non-scaling-stroke;
 }
 .sh-bg-ticks {
-  fill: #b89c6b;
+  fill: var(--color-gold, #b89c6b);
   font-family: var(--font-mono, ui-monospace, monospace);
   letter-spacing: 0.04em;
   opacity: calc(var(--bg-tick, 0) * 0.35);
@@ -304,7 +304,7 @@
 
 .sh-bg-track {
   fill: none;
-  stroke: #b89c6b;
+  stroke: var(--color-gold, #b89c6b);
   stroke-width: 1;
   stroke-dasharray: 2 5;
   vector-effect: non-scaling-stroke;
@@ -373,16 +373,16 @@
 }
 
 .sh-title {
-  fill: #b89c6b;
+  fill: var(--color-gold, #b89c6b);
   opacity: calc(1 - var(--lab, 0));
 }
 .sh-label {
-  fill: #b89c6b;
+  fill: var(--color-gold, #b89c6b);
   font-weight: 500;
   opacity: var(--lab, 0);
 }
 .sh-legend {
-  fill: #b89c6b;
+  fill: var(--color-gold, #b89c6b);
   opacity: calc(var(--fix, 0) * (1 - var(--lab, 0)) * (1 - var(--dim, 0) * 0.7));
 }
 .sh-legend-ghost {
@@ -397,7 +397,7 @@
 }
 
 .sh-baseline {
-  stroke: #b89c6b;
+  stroke: var(--color-gold, #b89c6b);
   stroke-opacity: 0.35;
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
@@ -507,22 +507,35 @@
   transform: scaleY(calc(1 - var(--sink, 0) * (1 - var(--ratio))));
 }
 .sh-median {
-  stroke: #b89c6b;
+  stroke: var(--color-gold, #b89c6b);
   stroke-width: 2;
   stroke-dasharray: 6 5;
 }
 .sh-focus-lab {
-  fill: #b89c6b;
+  fill: var(--color-gold, #b89c6b);
 }
 
 .sh-axis text {
-  fill: #b89c6b;
+  fill: var(--color-gold, #b89c6b);
   font-family: var(--font-mono, ui-monospace, monospace);
   opacity: calc(1 - var(--dim, 0) * 0.6);
 }
 .sh-axis text.is-now {
   fill: #ffe3c4;
   opacity: 1;
+}
+
+/* Dark halo behind small gold labels: a satellite glow drifting behind them can't pull
+   them under 4.5:1. */
+.sh-title,
+.sh-label,
+.sh-legend,
+.sh-focus-lab,
+.sh-axis text,
+.sh-bg-ticks,
+.sh-bg-sat-lab,
+.sh-bg-sat-ret {
+  text-shadow: 0 0 4px rgba(11, 14, 20, 0.9);
 }
 
 /* ---------------------------------------------------------------------------- phone */
@@ -560,6 +573,7 @@
 }
 .is-static .sh-stage {
   position: relative;
+  top: auto;
   height: auto;
   min-height: 100vh;
   padding-bottom: 40px;

@@ -10,7 +10,7 @@
  * Every number comes from src/mocks/hero_*.json (pipeline/export_hero_mocks.py).
  */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import pbHrJson from '../mocks/hero_pb_hr.json';
 import brazilJson from '../mocks/hero_brazil.json';
 import californiaJson from '../mocks/hero_california.json';
@@ -615,6 +615,9 @@ function StoryBackdrop({ uid, narrow, small, reduced }: BackdropProps) {
 // --------------------------------------------------------------------------- scroll math
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/** Height of the app's sticky NavBar (--nav-height, set by App); 0 when there is none. */
+const navHeight = (el: Element) => parseFloat(getComputedStyle(el).getPropertyValue('--nav-height')) || 0;
 const seg = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
 const ease = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -976,9 +979,10 @@ export default function StoryHero() {
     let last = 0;
     const measure = () => {
       const rect = section.getBoundingClientRect();
-      const vh = window.innerHeight;
-      pRaw = clamp01(-rect.top / Math.max(1, rect.height - vh));
-      inView = rect.bottom > 0 && rect.top < vh;
+      const nav = navHeight(section);
+      const vh = window.innerHeight - nav; // the stage sticks just below the NavBar
+      pRaw = clamp01((nav - rect.top) / Math.max(1, rect.height - vh));
+      inView = rect.bottom > nav && rect.top < window.innerHeight;
     };
     const tick = (now: number) => {
       measure();
@@ -1018,7 +1022,8 @@ export default function StoryHero() {
     const section = sectionRef.current;
     if (!section) return null;
     const rect = section.getBoundingClientRect();
-    return window.scrollY + rect.top + Math.max(0, rect.height - window.innerHeight) * p;
+    const nav = navHeight(section);
+    return window.scrollY + rect.top - nav + Math.max(0, rect.height - (window.innerHeight - nav)) * p;
   };
   // 'instant', not 'auto': global.css sets html { scroll-behavior: smooth }, which 'auto' obeys.
   const behavior: ScrollBehavior = reduced ? 'instant' : 'smooth';
@@ -1029,14 +1034,30 @@ export default function StoryHero() {
     if (top !== null) window.scrollTo({ top, behavior });
   };
 
-  const skipIntro = () => {
-    const target = document.getElementById('explore');
-    if (target) {
-      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
-      target.scrollIntoView({ behavior, block: 'start' });
-      target.focus({ preventScroll: true });
-      return;
+  /** Scroll a section to just below the sticky NavBar and move focus there. */
+  const jumpTo = (id: string) => {
+    const target = document.getElementById(id);
+    if (!target) return false;
+    if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+    // Layout position (offsetTop ignores transforms): sections wrapped in <Reveal> start
+    // translated 14px down and slide up as they appear, which would skew a rect-based target.
+    let docTop = 0;
+    for (let el: HTMLElement | null = target; el; el = el.offsetParent as HTMLElement | null) docTop += el.offsetTop;
+    const top = docTop - navHeight(target);
+    window.scrollTo({ top, behavior });
+    target.focus({ preventScroll: true });
+    return true;
+  };
+  const onJumpClick = (e: ReactMouseEvent<HTMLAnchorElement>) => {
+    const id = e.currentTarget.hash.slice(1);
+    if (id && jumpTo(id)) {
+      e.preventDefault();
+      history.replaceState(null, '', `#${id}`);
     }
+  };
+
+  const skipIntro = () => {
+    if (jumpTo('explore')) return;
     const top = scrollYAt(1);
     if (top !== null) window.scrollTo({ top: top + window.innerHeight, behavior });
   };
@@ -1047,10 +1068,11 @@ export default function StoryHero() {
     const section = sectionRef.current;
     if (!section) return;
     const rect = section.getBoundingClientRect();
-    const span = rect.height - window.innerHeight;
+    const nav = navHeight(section);
+    const span = rect.height - (window.innerHeight - nav);
     const target = readableAt(BEAT_COUNT - 1);
-    if (-rect.top / span < target) {
-      window.scrollTo({ top: window.scrollY + rect.top + span * target, behavior: 'instant' });
+    if ((nav - rect.top) / span < target) {
+      window.scrollTo({ top: window.scrollY + rect.top - nav + span * target, behavior: 'instant' });
     }
   };
 
@@ -1063,6 +1085,7 @@ export default function StoryHero() {
 
   return (
     <section
+      id="top"
       ref={sectionRef}
       className={`sh-section${reduced ? ' is-static' : ''}`}
       aria-labelledby={headlineId}
@@ -1095,10 +1118,10 @@ export default function StoryHero() {
               </h2>
             </div>
             <div className="sh-actions" onFocus={onActionsFocus}>
-              <a className="sh-btn sh-btn--primary" href="#explore">
+              <a className="sh-btn sh-btn--primary" href="#explore" onClick={onJumpClick}>
                 Pick any area
               </a>
-              <a className="sh-btn" href="#proof">
+              <a className="sh-btn" href="#proof" onClick={onJumpClick}>
                 See the data
               </a>
             </div>
