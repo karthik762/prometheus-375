@@ -25,8 +25,8 @@ interface SelectionContextType {
   setColorScale: (scale: ColorScaleType) => void;
 }
 
-// Terra MODIS starts Nov 2000 — first month of the harmonized record
-export const RECORD_START = '2000-11';
+// First month shown in the UI (calendar rows, time slider, Hero copy all say 2001)
+export const RECORD_START = '2001-01';
 const now = new Date();
 export const CURRENT_MONTH = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 

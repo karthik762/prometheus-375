@@ -9,26 +9,26 @@ import { LiveHotspotsLayer } from './LiveHotspotsLayer';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 import type { Polygon, MultiPolygon } from 'geojson';
 
-// Carto Dark Matter style definition using free tiles
+// Esri World Dark Gray Canvas — no API key needed. (Carto's dark_all raster
+// tiles now return an "API KEY REQUIRED" placeholder for every request.)
 const MAP_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
-    'carto-dark': {
+    'esri-dark': {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
       ],
       tileSize: 256,
-      attribution: '&copy; CARTO &copy; OpenStreetMap',
+      maxzoom: 16,
+      attribution: 'Powered by Esri &middot; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
     },
   },
   layers: [
     {
-      id: 'carto-dark-tiles',
+      id: 'esri-dark-tiles',
       type: 'raster',
-      source: 'carto-dark',
+      source: 'esri-dark',
       minzoom: 0,
       maxzoom: 19,
     },
@@ -45,6 +45,8 @@ export const FireMap: React.FC = () => {
 
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [showLive, setShowLive] = useState<boolean>(true);
+  // Flips true once the 'load' handler has added the AOI + live sources/layers
+  const [mapLoaded, setMapLoaded] = useState<boolean>(false);
 
   const isLive404 = liveError?.status === 404;
 
@@ -237,6 +239,9 @@ export const FireMap: React.FC = () => {
       }
     });
 
+    // Registered after the setup 'load' handler, so the sources exist when this runs
+    map.on('load', () => setMapLoaded(true));
+
     mapRef.current = map;
 
     return () => {
@@ -251,7 +256,7 @@ export const FireMap: React.FC = () => {
   // Update AOI boundary & fly smoothly to target region
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !mapLoaded) return;
 
     const source = map.getSource('aoi-source') as maplibregl.GeoJSONSource | undefined;
     if (!source) return;
@@ -303,12 +308,12 @@ export const FireMap: React.FC = () => {
         }
       );
     }
-  }, [area]);
+  }, [area, mapLoaded]);
 
   // Update live hotspots visibility
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !mapLoaded) return;
 
     const shouldShow = showLive && !isLive404;
 
@@ -323,7 +328,7 @@ export const FireMap: React.FC = () => {
     if (map.getLayer('live-hotspots-core')) {
       map.setLayoutProperty('live-hotspots-core', 'visibility', shouldShow ? 'visible' : 'none');
     }
-  }, [liveData, showLive, isLive404]);
+  }, [liveData, showLive, isLive404, mapLoaded]);
 
   const toggleDrawMode = useCallback(() => {
     if (!drawRef.current) return;

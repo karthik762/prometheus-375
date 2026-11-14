@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelection } from '../../hooks/useSelection';
+import { COLOR_SCALES, getScaleAccent } from '../../lib/colorRamp';
 
 export const NavBar: React.FC = () => {
   const { colorScale, setColorScale } = useSelection();
@@ -19,6 +20,7 @@ export const NavBar: React.FC = () => {
       }}
     >
       <div
+        className="nav-inner"
         style={{
           maxWidth: '1360px',
           width: '100%',
@@ -73,6 +75,7 @@ export const NavBar: React.FC = () => {
 
           {/* Clean Brand Typography: Prometheus 375 */}
           <span
+            className="nav-wordmark"
             style={{
               fontFamily: 'var(--font-serif)',
               fontWeight: 600,
@@ -88,6 +91,7 @@ export const NavBar: React.FC = () => {
 
         {/* Center Nav Links matching Image 2 */}
         <nav
+          className="nav-links"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -158,44 +162,33 @@ export const NavBar: React.FC = () => {
               padding: '2px',
             }}
           >
-            <button
-              type="button"
-              onClick={() => setColorScale('fire')}
-              aria-label="Select Fire Palette"
-              style={{
-                padding: '4px 8px',
-                fontSize: '0.75rem',
-                fontFamily: 'var(--font-mono)',
-                backgroundColor: colorScale === 'fire' ? 'var(--color-fire-3)' : 'transparent',
-                color: colorScale === 'fire' ? '#ffffff' : 'var(--color-text-tertiary)',
-                borderRadius: '3px',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Fire
-            </button>
-            <button
-              type="button"
-              onClick={() => setColorScale('viridis')}
-              aria-label="Select Viridis Palette"
-              style={{
-                padding: '4px 8px',
-                fontSize: '0.75rem',
-                fontFamily: 'var(--font-mono)',
-                backgroundColor: colorScale === 'viridis' ? 'var(--color-viridis-3)' : 'transparent',
-                color: colorScale === 'viridis' ? '#ffffff' : 'var(--color-text-tertiary)',
-                borderRadius: '3px',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Viridis
-            </button>
+            {COLOR_SCALES.map((cs) => (
+              <button
+                key={cs.id}
+                className="palette-btn"
+                type="button"
+                onClick={() => setColorScale(cs.id)}
+                aria-label={`Select ${cs.label} palette`}
+                aria-pressed={colorScale === cs.id}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-mono)',
+                  backgroundColor: colorScale === cs.id ? getScaleAccent(cs.id) : 'transparent',
+                  color: colorScale === cs.id ? '#ffffff' : 'var(--color-text-tertiary)',
+                  borderRadius: '3px',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {cs.label}
+              </button>
+            ))}
           </div>
 
           {/* Download Data Action Button matching Image 2 */}
           <a
+            className="nav-download"
             href="#datasets"
             style={{
               display: 'inline-flex',

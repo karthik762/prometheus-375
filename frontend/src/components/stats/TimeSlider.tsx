@@ -45,7 +45,7 @@ export const TimeSlider: React.FC = () => {
         gap: 'var(--space-sm)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span className="label-mono" style={{ color: 'var(--color-gold)' }}>
             Temporal Focus
@@ -55,7 +55,7 @@ export const TimeSlider: React.FC = () => {
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {MILESTONES.map((ms) => (
             <button
               key={ms.year}

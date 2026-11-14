@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
-import { useSelection, CURRENT_MONTH } from '../../hooks/useSelection';
+import { useSelection, CURRENT_MONTH, RECORD_START } from '../../hooks/useSelection';
 import { getHeatmapColor, getRampLegendSteps } from '../../lib/colorRamp';
 import { formatCount, formatMonthName } from '../../lib/format';
 import { LoadingState, EmptyState, ErrorState } from '../ui/States';
@@ -8,12 +8,12 @@ import { SampleDataBadge } from '../ui/SampleDataBadge';
 import type { CalendarRow } from '../../api/types';
 
 const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-const FIRST_YEAR = 2000; // Terra MODIS from Nov 2000
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const FIRST_YEAR = Number(RECORD_START.slice(0, 4)); // 2001
 const CURRENT_YEAR = Number(CURRENT_MONTH.slice(0, 4));
 const YEARS = Array.from({ length: CURRENT_YEAR - FIRST_YEAR + 1 }, (_, i) => FIRST_YEAR + i);
-// Sensor milestones worth labelling on the x-axis (+ first/last year)
-const LABELLED_YEARS = new Set([FIRST_YEAR, 2005, 2012, 2018, 2023, CURRENT_YEAR]);
-const GRID_COLUMNS = `24px repeat(${YEARS.length}, 1fr)`;
+const GRID_COLUMNS = '36px repeat(12, minmax(0, 1fr))';
+const CELL_HEIGHT = 14;
 
 export const BurnCalendar: React.FC = () => {
   const { data, isMock, loading, error, refetch } = useCalendar();
@@ -120,151 +120,122 @@ export const BurnCalendar: React.FC = () => {
         {!loading && !error && data && data.length > 0 && (
           <div style={{ overflowX: 'auto', paddingBottom: '4px' }}>
             <div
-              style={{
-                minWidth: '640px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '3px',
-              }}
+              style={{ minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '3px' }}
               role="grid"
-              aria-label={`Burning activity heatmap ${FIRST_YEAR}–${CURRENT_YEAR}`}
+              aria-label={`Burning activity heatmap ${FIRST_YEAR}–${CURRENT_YEAR}, one row per year`}
             >
-              {/* Matrix: 12 Months down, 26 Years across */}
-              {MONTH_LETTERS.map((letter, mIdx) => {
-                const monthNum = mIdx + 1;
-                return (
-                  <div
-                    key={`${letter}-${mIdx}`}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: GRID_COLUMNS,
-                      gap: '3px',
-                      alignItems: 'center',
-                    }}
-                    role="row"
-                  >
-                    {/* Month Label */}
-                    <div
-                      style={{
-                        fontSize: '0.6875rem',
-                        fontFamily: 'var(--font-mono)',
-                        color: 'var(--color-text-tertiary)',
-                        textAlign: 'left',
-                        userSelect: 'none',
-                      }}
-                      role="rowheader"
-                    >
-                      {letter}
-                    </div>
-
-                    {/* Year Cells */}
-                    {YEARS.map((year, colIdx) => {
-                      const monthStr = `${year}-${String(monthNum).padStart(2, '0')}`;
-                      if (monthStr > CURRENT_MONTH) {
-                        return (
-                          <div
-                            key={`${year}-${monthNum}`}
-                            style={{
-                              height: '18px',
-                              backgroundColor: 'transparent',
-                              borderRadius: '2px',
-                            }}
-                            aria-hidden="true"
-                          />
-                        );
-                      }
-
-                      const cellData = calendarMap.get(monthStr);
-                      const isSelected = selectedMonth === monthStr;
-
-                      // No row = month not covered (before Terra, or outside the query) — not a true zero
-                      if (!cellData) {
-                        return (
-                          <div
-                            key={monthStr}
-                            role="gridcell"
-                            aria-label={`${formatMonthName(monthStr)}: no data`}
-                            title={`${formatMonthName(monthStr)}: no data`}
-                            style={{
-                              height: '18px',
-                              border: '1px dashed rgba(255, 255, 255, 0.08)',
-                              borderRadius: '2px',
-                            }}
-                          />
-                        );
-                      }
-
-                      const count = cellData.count;
-                      const isModis = cellData.source === 'modis_converted';
-                      const isPartial = monthStr === CURRENT_MONTH;
-                      const cellColor = getHeatmapColor(count, maxCount, colorScale);
-                      const showTip = (el: HTMLElement) => {
-                        const rect = el.getBoundingClientRect();
-                        setHoveredCell({ row: cellData, x: rect.left + rect.width / 2, y: rect.top - 8 });
-                      };
-
-                      return (
-                        <button
-                          key={monthStr}
-                          type="button"
-                          onClick={() => setSelectedMonth(monthStr)}
-                          onMouseEnter={(e) => showTip(e.currentTarget)}
-                          onFocus={(e) => showTip(e.currentTarget)}
-                          onMouseLeave={() => setHoveredCell(null)}
-                          onBlur={() => setHoveredCell(null)}
-                          className={`cell cell-stagger ${isModis ? 'hatched-cell' : ''}`}
-                          style={{
-                            height: '18px',
-                            backgroundColor: cellColor,
-                            border: isSelected
-                              ? '1.5px solid var(--color-gold)'
-                              : isPartial
-                                ? '1px dashed var(--color-gold)'
-                                : '1px solid rgba(255, 255, 255, 0.05)',
-                            borderRadius: '2px',
-                            padding: 0,
-                            cursor: 'pointer',
-                            animationDelay: `${colIdx * 8}ms`,
-                            position: 'relative',
-                            zIndex: isSelected ? 4 : 1,
-                          }}
-                          aria-label={`${formatMonthName(monthStr)}${isPartial ? ' (month to date)' : ''}: ${formatCount(count)} fires (${
-                            isModis
-                              ? `estimated from MODIS, range ${formatCount(cellData.uncertainty_lo)}–${formatCount(cellData.uncertainty_hi)}`
-                              : 'VIIRS 375m'
-                          })`}
-                        />
-                      );
-                    })}
-                  </div>
-                );
-              })}
-
-              {/* Year Labels */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: GRID_COLUMNS,
-                  gap: '3px',
-                  textAlign: 'center',
-                  marginTop: '6px',
-                }}
-              >
+              {/* Month header: one column per month */}
+              <div style={{ display: 'grid', gridTemplateColumns: GRID_COLUMNS, gap: '3px' }} role="row">
                 <div />
-                {YEARS.map((y) => (
+                {MONTH_LETTERS.map((letter, mIdx) => (
                   <div
-                    key={y}
+                    key={mIdx}
+                    role="columnheader"
+                    aria-label={MONTH_NAMES[mIdx]}
                     style={{
-                      fontSize: '0.625rem',
+                      fontSize: '0.6875rem',
                       fontFamily: 'var(--font-mono)',
                       color: 'var(--color-text-tertiary)',
+                      textAlign: 'center',
                       userSelect: 'none',
                     }}
                   >
-                    {LABELLED_YEARS.has(y) ? `'${String(y).slice(2)}` : ''}
+                    {letter}
                   </div>
                 ))}
               </div>
+
+              {/* Matrix: one row per year, one column per month */}
+              {YEARS.map((year, rowIdx) => (
+                <div
+                  key={year}
+                  style={{ display: 'grid', gridTemplateColumns: GRID_COLUMNS, gap: '3px', alignItems: 'center' }}
+                  role="row"
+                >
+                  <div
+                    role="rowheader"
+                    style={{
+                      fontSize: '0.6875rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: year === 2012 ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {year}
+                  </div>
+
+                  {MONTH_LETTERS.map((_, mIdx) => {
+                    const monthStr = `${year}-${String(mIdx + 1).padStart(2, '0')}`;
+                    if (monthStr > CURRENT_MONTH) {
+                      return <div key={monthStr} style={{ height: `${CELL_HEIGHT}px` }} aria-hidden="true" />;
+                    }
+
+                    const cellData = calendarMap.get(monthStr);
+                    const isSelected = selectedMonth === monthStr;
+
+                    // No row = month not covered by the query — not a true zero
+                    if (!cellData) {
+                      return (
+                        <div
+                          key={monthStr}
+                          role="gridcell"
+                          aria-label={`${formatMonthName(monthStr)}: no data`}
+                          title={`${formatMonthName(monthStr)}: no data`}
+                          style={{
+                            height: `${CELL_HEIGHT}px`,
+                            border: '1px dashed rgba(255, 255, 255, 0.08)',
+                            borderRadius: '2px',
+                          }}
+                        />
+                      );
+                    }
+
+                    const count = cellData.count;
+                    const isModis = cellData.source === 'modis_converted';
+                    const isPartial = monthStr === CURRENT_MONTH;
+                    const cellColor = getHeatmapColor(count, maxCount, colorScale);
+                    const showTip = (el: HTMLElement) => {
+                      const rect = el.getBoundingClientRect();
+                      setHoveredCell({ row: cellData, x: rect.left + rect.width / 2, y: rect.top - 8 });
+                    };
+
+                    return (
+                      <button
+                        key={monthStr}
+                        type="button"
+                        role="gridcell"
+                        aria-selected={isSelected}
+                        onClick={() => setSelectedMonth(monthStr)}
+                        onMouseEnter={(e) => showTip(e.currentTarget)}
+                        onFocus={(e) => showTip(e.currentTarget)}
+                        onMouseLeave={() => setHoveredCell(null)}
+                        onBlur={() => setHoveredCell(null)}
+                        className={`cell cell-stagger ${isModis ? 'hatched-cell' : ''}`}
+                        style={{
+                          height: `${CELL_HEIGHT}px`,
+                          backgroundColor: cellColor,
+                          border: isSelected
+                            ? '1.5px solid var(--color-gold)'
+                            : isPartial
+                              ? '1px dashed var(--color-gold)'
+                              : '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: '2px',
+                          padding: 0,
+                          cursor: 'pointer',
+                          animationDelay: `${rowIdx * 8}ms`,
+                          position: 'relative',
+                          zIndex: isSelected ? 4 : 1,
+                        }}
+                        aria-label={`${formatMonthName(monthStr)}${isPartial ? ' (month to date)' : ''}: ${formatCount(count)} fires (${
+                          isModis
+                            ? `estimated from MODIS, range ${formatCount(cellData.uncertainty_lo)}–${formatCount(cellData.uncertainty_hi)}`
+                            : 'VIIRS 375m'
+                        })`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -315,7 +286,7 @@ export const BurnCalendar: React.FC = () => {
               display: 'inline-block',
             }}
           />
-          <span>Hatched: estimated from MODIS (before VIIRS)</span>
+          <span>Hatched: estimated from MODIS, 2001–2011</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
