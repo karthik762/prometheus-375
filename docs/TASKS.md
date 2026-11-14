@@ -13,8 +13,8 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 ## Build 1
 - [x] **D1** R — 01_clean.py: type=0, confidence filters, unify MODIS/VIIRS columns — after K3 — due Sat 13:00 — done (42ec022), all 5 regions
 - [x] **D2** R — 02_grid.py: 0.25° cell x month x satellite counts (help: Poojitha) — after D1 — due Sat 15:00 — done 12:28 (a194171), all 5 regions, totals asserted. Non-India regions have no NOAA-20/21 (not downloaded, no zero rows) → SNPP is their only VIIRS.
-- [ ] **B1** K — FastAPI skeleton: /health, /presets, /calendar on sample data — after K1, K5 — due Sat 13:00
-- [ ] **B2** K — DuckDB spatial polygon/bbox filter on cell centroids (help: Snehitha) — after B1 — due Sat 15:00
+- [x] **B1** K — FastAPI skeleton: /health, /presets, /calendar on sample data — after K1, K5 — due Sat 13:00 — done (147b37a)
+- [x] **B2** K — DuckDB spatial polygon/bbox filter on cell centroids (help: Snehitha) — after B1 — due Sat 15:00 — done (346c0f9)
 - [ ] **F1** S — React+Vite shell, MapLibre map, presets dropdown, lat/long input — after K4 — due Sat 13:00
 - [ ] **F2** S — Polygon draw tool + typed api.ts client (mock JSON per contract) — after F1, K5 — due Sat 15:00
 
@@ -22,9 +22,9 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D3** R — 03_satfix.py: per-satellite average; S-NPP vs NOAA-20/21 overlap check — after D2 — due Sat 17:00 — done 13:08 (e69d4e8). India overlap: SNPP/N20 median 0.976 r=0.998; N21/N20 0.941 r=0.999.
 - [x] **D4** R — 04_fit.py: MODIS->VIIRS ratio per region x month-of-year (2012-2026) (help: Poojitha) — after D3 — due Sat 19:00 — done 14:06 (0de51d1). 2.5° zones + pb_hr zone, pooled ratio, 2020 excluded, bootstrap lo/hi. India pooled 11.4; pb_hr Oct 8.35, Nov 9.52. Outputs data/interim/fit_<region>.parquet + cell_zone_<region>.parquet. Needs numpy in requirements.txt.
 - [x] **D5** P — 05_series.py + 06_validate.py: harmonized.parquet, 2020 holdout, metrics.json (help: Rishitha) — after D4 — due Sat 20:00 — done 14:53 (c762b1a), all 5 regions. harmonized.parquet 8.7M rows / 9.4 MB (zero rows kept, no nonzero version needed); before_after.parquet cell-level for /validation. Outputs in data/processed/ (gitignored — share via Drive / bundle for Render).
-- [ ] **D6** P — 07_anomaly.py + 08_onset.py: median/p10/p90/z, onset shift days — after D3 — due Sat 20:00
+- [x] **D6** P — 07_anomaly.py + 08_onset.py: median/p10/p90/z, onset shift days — after D3 — due Sat 20:00 — done 15:30 by Rishitha (96a0709); outputs anomaly_<region>.parquet, onset_<region>.parquet, onset_daily_<region>.parquet in data/processed/
 - [ ] **B3** K — /live: FIRMS NOAA-20 + NOAA-21 NRT, 30-min cache, snapshot fallback — after K2, B1 — due Sat 18:00
-- [ ] **B4** P — /anomaly endpoint (reads anomaly table) (help: Karthik) — after D6, B2 — due Sat 20:00
+- [ ] **B4** P — /anomaly endpoint (reads anomaly table) (help: Karthik) — after D6, B2 — due Sat 20:00 — reassigned to Karthik 15:43, **Ongoing**
 - [ ] **F3** R — Burning calendar heatmap (viridis/cividis, MODIS-estimated hatching) (help: Snehitha) — after F2, B1 — due Sat 20:00
 - [ ] **F4** S — Now-vs-normal card + time slider — after F2, B4 — due Sat 20:00
 
@@ -32,7 +32,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [ ] **I1** K — Integration #1: real harmonized.parquet into backend + UI (help: Rishitha, Poojitha, Snehitha) — after D5, B2, F3 — due Sat 21:00
 
 ## Build 3
-- [ ] **D7** P — International regions: Amazon, California, Australia, Indonesia (help: Rishitha) — after D5 — due Sun 02:00
+- [x] **D7** P — International regions: Amazon, California, Australia, Indonesia (help: Rishitha) — after D5 — due Sun 02:00 — done 15:46 via D1–D6 runs: Brazil (incl. Amazon), Australia, California, Greece; Indonesia dropped (never downloaded)
 - [ ] **B5** K — /export.csv, /export_analytics.csv, /validation (help: Poojitha) — after D5, B2 — due Sat 23:00
 - [ ] **B6** K — Deploy backend to Render (parquet bundled), share URL — after I1 — due Sat 23:30
 - [ ] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00
