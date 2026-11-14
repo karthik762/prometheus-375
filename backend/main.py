@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import duckdb
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -11,10 +11,14 @@ try:
     from backend.spatial import build_spatial_filter, init_duckdb_spatial
     from backend.firms_live import get_live_hotspots_geojson
     from backend.anomaly import get_anomaly_metrics
+    from backend.exports import export_csv, export_analytics_csv
+    from backend.validation import get_validation_data
 except ImportError:
     from spatial import build_spatial_filter, init_duckdb_spatial
     from firms_live import get_live_hotspots_geojson
     from anomaly import get_anomaly_metrics
+    from exports import export_csv, export_analytics_csv
+    from validation import get_validation_data
 
 load_dotenv()
 
@@ -45,9 +49,10 @@ def get_parquet_path() -> str:
         "data/processed/harmonized.parquet",
         "../data/processed/harmonized.parquet",
         str(Path(__file__).resolve().parent.parent / "data" / "processed" / "harmonized.parquet"),
+        str(Path(__file__).resolve().parent / "data" / "harmonized.parquet"),
+        "backend/data/harmonized.parquet",
         "data/harmonized.parquet",
         "../data/harmonized.parquet",
-        "backend/data/harmonized.parquet",
         "../data-sample/harmonized_sample.parquet",
         "data-sample/harmonized_sample.parquet",
         str(Path(__file__).resolve().parent.parent / "data-sample" / "harmonized_sample.parquet"),
@@ -88,6 +93,22 @@ class AnomalyResponse(BaseModel):
     z_score: float
     percentile: float
     onset_shift_days: Optional[float] = None
+
+
+class BeforeAfterEntry(BaseModel):
+    month: str
+    raw: float
+    harmonized: float
+    source: Optional[str] = "viirs"
+    uncertainty_lo: Optional[float] = None
+    uncertainty_hi: Optional[float] = None
+
+
+class ValidationResponse(BaseModel):
+    holdout_year: int
+    mae: float
+    mape: float
+    before_after: List[BeforeAfterEntry]
 
 
 # Presets per project scope & DECISIONS.md (pb_hr 27.5-32.5N, 73.5-77.5E)
@@ -154,7 +175,6 @@ def calendar(
             detail=f"Harmonized parquet data not found at '{parquet_path}'",
         )
 
-    # Build SQL filter conditions and parameters
     conditions: List[str] = []
     params: List = [parquet_path]
 
@@ -166,7 +186,6 @@ def calendar(
         conditions.append("month <= ?")
         params.append(end)
 
-    # Spatial filtering via reusable helper (Task B2)
     spatial_conditions, spatial_params, requires_spatial = build_spatial_filter(
         bbox=bbox,
         polygon=polygon,
@@ -239,6 +258,54 @@ def anomaly(
         polygon=polygon,
         parquet_path=parquet_path,
     )
+
+
+@app.get("/export.csv")
+def export_hotspots(
+    start: Optional[str] = Query(None, description="Start month in YYYY-MM format"),
+    end: Optional[str] = Query(None, description="End month in YYYY-MM format"),
+    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
+    polygon: Optional[str] = Query(None, description="GeoJSON polygon string"),
+):
+    """
+    Export cell-level harmonized fire hotspot CSV for specified bounds and date range.
+    """
+    parquet_path = get_parquet_path()
+    return export_csv(
+        start=start,
+        end=end,
+        bbox=bbox,
+        polygon=polygon,
+        parquet_path=parquet_path,
+    )
+
+
+@app.get("/export_analytics.csv")
+def export_analytics(
+    start: Optional[str] = Query(None, description="Start month in YYYY-MM format"),
+    end: Optional[str] = Query(None, description="End month in YYYY-MM format"),
+    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
+    polygon: Optional[str] = Query(None, description="GeoJSON polygon string"),
+):
+    """
+    Export aggregated monthly burning activity series and climatological anomalies as CSV.
+    """
+    parquet_path = get_parquet_path()
+    return export_analytics_csv(
+        start=start,
+        end=end,
+        bbox=bbox,
+        polygon=polygon,
+        parquet_path=parquet_path,
+    )
+
+
+@app.get("/validation", response_model=ValidationResponse)
+def validation():
+    """
+    Return 2020 holdout validation metrics (MAE, MAPE) and harmonized before/after series.
+    """
+    return get_validation_data()
 
 
 if __name__ == "__main__":
