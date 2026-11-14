@@ -1,9 +1,8 @@
-fastapi 
-uvicorn 
-duckdb 
-httpx 
-pydantic 
-python-dotenv 
-shapely 
-pandas 
+fastapi
+uvicorn[standard]
+duckdb
+pydantic
+python-dotenv
+pandas
 pyarrow
+httpx
