@@ -3,6 +3,7 @@ import { useSelection } from '../../hooks/useSelection';
 import { useValidation } from '../../hooks/useValidation';
 import { getExportHotspotsCsvUrl, getExportAnalyticsCsvUrl, isOfflineMockMode } from '../../api/api';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
+import mockValidation from '../../api/mock/validation.json';
 
 interface DatasetCoverProps {
   title: string;
@@ -284,7 +285,7 @@ export const DatasetCoverSection: React.FC = () => {
           downloadLabel={hotspotsExport.isMock ? 'Sample CSV' : 'Download CSV'}
           isMock={hotspotsExport.isMock}
           description="Cell-level monthly active fire counts cross-calibrated between MODIS and VIIRS with empirical uncertainty intervals."
-          fields={['lat', 'lon', 'date', 'sensor', 'confidence']}
+          fields={['cell_id', 'lat', 'lon', 'month', 'harmonized_count', 'source', 'uncertainty']}
           sampleCurl={`curl "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/export.csv?start=${startMonth}&end=${endMonth}"`}
         />
 
@@ -296,8 +297,8 @@ export const DatasetCoverSection: React.FC = () => {
           downloadUrl={analyticsExport.url}
           downloadLabel={analyticsExport.isMock ? 'Sample CSV' : 'Download CSV'}
           isMock={analyticsExport.isMock}
-          description="Integrated monthly burning series with historical normal baseline medians, percentiles, and seasonal onset shift days."
-          fields={['count', 'median', 'p10-p90', 'z-score']}
+          description="Integrated monthly burning series for your area, with each month's historical normal: median, p10–p90 band, z-score and percentile."
+          fields={['count', 'source', 'median', 'p10-p90', 'z-score', 'percentile']}
           sampleCurl={`curl "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/export_analytics.csv"`}
         />
 
@@ -309,13 +310,14 @@ export const DatasetCoverSection: React.FC = () => {
           downloadUrl={
             !isMockMode
               ? `${import.meta.env.VITE_API_URL}/validation`
-              : '/src/api/mock/validation.json'
+              : // /src paths only exist on the Vite dev server — embed the sample instead
+                `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(mockValidation, null, 2))}`
           }
           downloadLabel={isMockMode ? 'Download Sample JSON' : 'Download JSON'}
           isMock={valIsMock}
           isDisabled={!isMockMode && isVal404}
           description="Validation benchmarking on the 2020 cross-satellite holdout year including Mean Absolute Percentage Error (MAPE) proof."
-          fields={['before/after series', 'MAE', 'bias']}
+          fields={['holdout_year', 'MAE', 'MAPE', 'before/after series']}
           sampleCurl={`curl "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/validation"`}
         />
       </div>

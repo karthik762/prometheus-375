@@ -35,7 +35,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **D7** P — International regions: Amazon, California, Australia, Indonesia (help: Rishitha) — after D5 — due Sun 02:00 — done 15:46 via D1–D6 runs: Brazil (incl. Amazon), Australia, California, Greece; Indonesia dropped (never downloaded)
 - [ ] **B5** K — /export.csv, /export_analytics.csv, /validation (help: Poojitha) — after D5, B2 — due Sat 23:00
 - [ ] **B6** K — Deploy backend to Render (parquet bundled), share URL — after I1 — due Sat 23:30
-- [ ] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00 — **Waiting on dependency**: live layer + CSV links built (0b9fbc6); test /live against B3, downloads wait on B5
+- [x] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00 — done: verified on real backend (B5 c034313) — /export.csv + /export_analytics.csv download as attachments and follow the selected area, /validation JSON (2020 holdout, MAPE 11.37%); live layer renders NOAA-20/21 points (snapshot fallback locally — needs FIRMS_MAP_KEY on Render for true NRT)
 - [ ] **F6** R — Before/after proof chart + uncertainty bands — after B5 — due Sun 01:00
 - [ ] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30
 
