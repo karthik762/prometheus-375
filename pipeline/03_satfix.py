@@ -13,8 +13,9 @@ Rules:
   * Active satellites per region come from the rows in the grid file, not from
     launch dates. Outside India the grid has no NOAA-20/21 rows, so VIIRS = SNPP.
   * Partial months are dropped before averaging: SNPP 2026-11 (stopped Nov 2) and
-    each satellite's first month when it began mid-month (Aqua 2002-07,
-    SNPP 2012-01, NOAA-20 2018-04, NOAA-21 2023-03).
+    each satellite's first month when it began mid-month (Aqua 2002-07 starts
+    Jul 4, SNPP 2012-01 starts Jan 20). NOAA-20 2018-04 and NOAA-21 2023-03 are
+    kept: their data starts on the 1st, so those months are complete.
   * mean_count = mean of n_hotspots over the active satellites of that family for
     that cell-month (02_grid zero-fills, so a satellite with no fires counts as 0).
     n_sats = number of satellites averaged.
@@ -46,8 +47,8 @@ PARTIAL_MONTHS = {
     ("SNPP", "2026-11"): "SNPP stopped delivering 2026-11-02",
     ("Aqua", "2002-07"): "Aqua began mid-month",
     ("SNPP", "2012-01"): "SNPP began mid-month",
-    ("NOAA20", "2018-04"): "NOAA-20 began mid-month",
-    ("NOAA21", "2023-03"): "NOAA-21 began mid-month",
+    # NOAA-20 (2018-04) and NOAA-21 (2023-03) are NOT dropped: FIRMS data starts
+    # on the 1st (2018-04-01, 2023-03-01), so their first months are complete.
 }
 
 OVERLAP_START, OVERLAP_END = "2018-05", "2026-10"
