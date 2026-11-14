@@ -147,7 +147,48 @@ export async function fetchAnomaly(
     month,
   };
 
-  return request<Anomaly>('/anomaly', params, signal, mockAnomaly as Anomaly);
+  return request<Anomaly>('/anomaly', params, signal, buildMockAnomaly(month));
+}
+
+/**
+ * Offline mode: derive the anomaly for `month` from the real Punjab calendar
+ * series (same calendar month in the other years = the "normal"), so the card
+ * changes as the slider moves. The current month is month-to-date and needs a
+ * day-matched baseline (DECISIONS 13:10), which the monthly series can't give —
+ * so it keeps the hand-written mock in mock/anomaly.json.
+ */
+function buildMockAnomaly(month: string): Anomaly {
+  const fallback = mockAnomaly as Anomaly;
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  if (!month || month >= currentMonth) return fallback;
+
+  const rows = mockCalendar as CalendarRow[];
+  const current = rows.find((r) => r.month === month)?.count;
+  const mm = month.slice(5);
+  const baseline = rows
+    .filter((r) => r.month.slice(5) === mm && r.month !== month && r.month < currentMonth)
+    .map((r) => r.count)
+    .sort((a, b) => a - b);
+  if (current === undefined || baseline.length < 3) return fallback;
+
+  const q = (p: number) => {
+    const i = (baseline.length - 1) * p;
+    const lo = Math.floor(i);
+    return baseline[lo] + (baseline[Math.ceil(i)] - baseline[lo]) * (i - lo);
+  };
+  const mean = baseline.reduce((a, b) => a + b, 0) / baseline.length;
+  const sd = Math.sqrt(baseline.reduce((a, b) => a + (b - mean) ** 2, 0) / (baseline.length - 1));
+  return {
+    current,
+    median: q(0.5),
+    p10: q(0.1),
+    p90: q(0.9),
+    z_score: sd > 0 ? (current - mean) / sd : 0,
+    percentile: (100 * baseline.filter((v) => v <= current).length) / baseline.length,
+    onset_shift_days: null,
+    is_month_to_date: false,
+  };
 }
 
 /**

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAnomaly } from '../../hooks/useAnomaly';
-import { useSelection } from '../../hooks/useSelection';
+import { useSelection, CURRENT_MONTH } from '../../hooks/useSelection';
 import { CountUp } from './CountUp';
 import { formatCount, formatMonthShort } from '../../lib/format';
 import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
@@ -11,6 +11,11 @@ export const NowVsNormalCard: React.FC = () => {
   const { selectedMonth } = useSelection();
 
   const monthLabel = formatMonthShort(selectedMonth).toUpperCase();
+  const monthName = new Date(`${selectedMonth}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
+  // Current month is partial; backend flags it, but fall back to the calendar check
+  const isMonthToDate = anomaly?.is_month_to_date ?? selectedMonth === CURRENT_MONTH;
+  const onset = anomaly?.onset_shift_days;
+  const baselineEnd = Number(selectedMonth.slice(0, 4)) - 1;
 
   return (
     <div
@@ -46,6 +51,7 @@ export const NowVsNormalCard: React.FC = () => {
             }}
           >
             NOW VS NORMAL • {monthLabel}
+            {isMonthToDate ? ' • MONTH TO DATE' : ''}
           </span>
           {isMock && <SampleDataBadge />}
         </div>
@@ -95,28 +101,33 @@ export const NowVsNormalCard: React.FC = () => {
                 marginBottom: 'var(--space-sm)',
               }}
             >
-              Fires this month, against a typical November of{' '}
+              {isMonthToDate ? 'Fires so far this month' : `Fires in ${monthName}`}, against a typical{' '}
+              {isMonthToDate ? `${monthName} to date` : monthName} of{' '}
               <strong style={{ color: 'var(--color-text-primary)' }}>
                 {formatCount(anomaly.median)}
               </strong>
               .
             </p>
 
-            <div
-              style={{
-                fontSize: '0.9375rem',
-                color: 'var(--color-text-primary)',
-                fontWeight: 600,
-                marginTop: '4px',
-              }}
-            >
-              Season started{' '}
-              <span style={{ color: 'var(--color-gold)' }}>
-                {Math.abs(anomaly.onset_shift_days).toFixed(0)} days{' '}
-                {anomaly.onset_shift_days <= 0 ? 'early' : 'late'}
-              </span>
-              .
-            </div>
+            {/* Onset only exists once the season has started; null = not yet / not computed */}
+            {typeof onset === 'number' && (
+              <div
+                style={{
+                  fontSize: '0.9375rem',
+                  color: 'var(--color-text-primary)',
+                  fontWeight: 600,
+                  marginTop: '4px',
+                }}
+              >
+                Season started{' '}
+                <span style={{ color: 'var(--color-gold)' }}>
+                  {Math.round(onset) === 0
+                    ? 'on schedule'
+                    : `${Math.abs(onset).toFixed(0)} days ${onset < 0 ? 'early' : 'late'}`}
+                </span>
+                .
+              </div>
+            )}
 
             {/* Percentile and Z-Score */}
             <div
@@ -148,7 +159,10 @@ export const NowVsNormalCard: React.FC = () => {
           lineHeight: 1.4,
         }}
       >
-        Day-matched baseline from 2000–2025. Per-satellite normalization guarantees cross-sensor fidelity.
+        {isMonthToDate
+          ? `Day-matched baseline: the same days of ${monthName} in 2001–${baselineEnd}.`
+          : `Normal = the same month in the other years of the 2001–${Number(CURRENT_MONTH.slice(0, 4)) - 1} record.`}{' '}
+        Per-satellite averaging keeps MODIS and VIIRS years comparable.
       </div>
     </div>
   );
