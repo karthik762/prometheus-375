@@ -18,6 +18,7 @@ dist/
 # data: raw FIRMS downloads are too big for GitHub (100 MB limit) - share via Drive
 data/raw/
 data/interim/
+data/processed/
 *.zip
 DL_FIRE_*/
 fire_archive_*.csv
