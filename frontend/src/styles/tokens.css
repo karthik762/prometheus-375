@@ -1,0 +1,64 @@
+:root {
+  /* Navy backgrounds and surfaces */
+  --color-bg-base: #141625;
+  --color-bg-surface: #161a37;
+  --color-bg-elevated: #1f244a;
+  --color-border: #323754;
+  --color-border-subtle: rgba(50, 55, 84, 0.6);
+  --color-border-focus: #b89c6b;
+  --color-muted: #5f677a;
+
+  /* Accent & Gold */
+  --color-gold: #b89c6b;
+  --color-gold-hover: #c9ad7d;
+  --color-gold-muted: rgba(184, 156, 107, 0.2);
+
+  /* Fire Ramp */
+  --color-fire-1: #5a1f00;
+  --color-fire-2: #8f3a0a;
+  --color-fire-3: #c45a1e;
+  --color-fire-4: #e6863f;
+  --color-fire-5: #f4b37a;
+
+  /* Viridis Ramp (Cividis/Viridis colorblind-safe) */
+  --color-viridis-0: #1b1c2b;
+  --color-viridis-1: #440154;
+  --color-viridis-2: #3b528b;
+  --color-viridis-3: #21918c;
+  --color-viridis-4: #5ec962;
+  --color-viridis-5: #fde725;
+
+  /* Text colors */
+  --color-text-primary: #e8e9f2;
+  --color-text-secondary: #b8bcd0;
+  --color-text-tertiary: #8c92a8;
+
+  /* Status */
+  --color-anomaly-high: #e6863f;
+  --color-anomaly-low: #5ec962;
+  --color-anomaly-normal: #8c92a8;
+  --color-error: #e05d5d;
+
+  /* Typography */
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Radii (restrained 4-6px) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 250ms ease-out;
+  --transition-slow: 350ms ease-out;
+}

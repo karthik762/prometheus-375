@@ -1,0 +1,2645 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.5575,
+          30.8625
+        ]
+      },
+      "properties": {
+        "latitude": 30.8625,
+        "longitude": 74.5575,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 15.0,
+        "brightness": 322.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0743",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7543,
+          31.1257
+        ]
+      },
+      "properties": {
+        "latitude": 31.1257,
+        "longitude": 75.7543,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 29.4,
+        "brightness": 311.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "0713",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8846,
+          29.8049
+        ]
+      },
+      "properties": {
+        "latitude": 29.8049,
+        "longitude": 75.8846,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 28.0,
+        "brightness": 349.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1426",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8553,
+          29.7731
+        ]
+      },
+      "properties": {
+        "latitude": 29.7731,
+        "longitude": 75.8553,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 39.3,
+        "brightness": 310.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "0844",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1391,
+          30.2988
+        ]
+      },
+      "properties": {
+        "latitude": 30.2988,
+        "longitude": 75.1391,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 12.3,
+        "brightness": 352.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0705",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.3257,
+          30.1878
+        ]
+      },
+      "properties": {
+        "latitude": 30.1878,
+        "longitude": 75.3257,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 18.1,
+        "brightness": 324.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0646",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.7871,
+          30.3945
+        ]
+      },
+      "properties": {
+        "latitude": 30.3945,
+        "longitude": 74.7871,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 44.5,
+        "brightness": 314.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1053",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5365,
+          30.8345
+        ]
+      },
+      "properties": {
+        "latitude": 30.8345,
+        "longitude": 76.5365,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 19.0,
+        "brightness": 320.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "0702",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2781,
+          30.9193
+        ]
+      },
+      "properties": {
+        "latitude": 30.9193,
+        "longitude": 76.2781,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 47.3,
+        "brightness": 357.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0724",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9621,
+          29.9227
+        ]
+      },
+      "properties": {
+        "latitude": 29.9227,
+        "longitude": 75.9621,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 19.1,
+        "brightness": 330.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "0942",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6543,
+          29.8941
+        ]
+      },
+      "properties": {
+        "latitude": 29.8941,
+        "longitude": 76.6543,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 32.0,
+        "brightness": 343.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0834",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.8758,
+          31.0957
+        ]
+      },
+      "properties": {
+        "latitude": 31.0957,
+        "longitude": 74.8758,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 19.8,
+        "brightness": 364.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1414",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4386,
+          30.98
+        ]
+      },
+      "properties": {
+        "latitude": 30.98,
+        "longitude": 76.4386,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 37.8,
+        "brightness": 322.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "0651",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1158,
+          30.0202
+        ]
+      },
+      "properties": {
+        "latitude": 30.0202,
+        "longitude": 75.1158,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 12.1,
+        "brightness": 361.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "1113",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.41,
+          30.9041
+        ]
+      },
+      "properties": {
+        "latitude": 30.9041,
+        "longitude": 75.41,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 44.1,
+        "brightness": 335.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "1008",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7911,
+          29.8412
+        ]
+      },
+      "properties": {
+        "latitude": 29.8412,
+        "longitude": 75.7911,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 14.5,
+        "brightness": 342.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "1223",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7943,
+          29.7702
+        ]
+      },
+      "properties": {
+        "latitude": 29.7702,
+        "longitude": 76.7943,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 25.7,
+        "brightness": 315.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0655",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9431,
+          29.4851
+        ]
+      },
+      "properties": {
+        "latitude": 29.4851,
+        "longitude": 75.9431,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 38.5,
+        "brightness": 333.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "0724",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7911,
+          30.1922
+        ]
+      },
+      "properties": {
+        "latitude": 30.1922,
+        "longitude": 76.7911,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 26.6,
+        "brightness": 363.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "0643",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.0679,
+          31.0739
+        ]
+      },
+      "properties": {
+        "latitude": 31.0739,
+        "longitude": 76.0679,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 26.9,
+        "brightness": 324.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1107",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.8638,
+          29.9631
+        ]
+      },
+      "properties": {
+        "latitude": 29.9631,
+        "longitude": 74.8638,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 2.6,
+        "brightness": 349.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1032",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.6677,
+          31.1811
+        ]
+      },
+      "properties": {
+        "latitude": 31.1811,
+        "longitude": 75.6677,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 7.3,
+        "brightness": 344.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1438",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.36,
+          29.7172
+        ]
+      },
+      "properties": {
+        "latitude": 29.7172,
+        "longitude": 75.36,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 9.9,
+        "brightness": 362.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1458",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.2456,
+          29.2015
+        ]
+      },
+      "properties": {
+        "latitude": 29.2015,
+        "longitude": 75.2456,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 3.4,
+        "brightness": 361.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "1015",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5194,
+          29.3506
+        ]
+      },
+      "properties": {
+        "latitude": 29.3506,
+        "longitude": 76.5194,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 45.6,
+        "brightness": 314.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1352",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2494,
+          29.38
+        ]
+      },
+      "properties": {
+        "latitude": 29.38,
+        "longitude": 76.2494,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 37.3,
+        "brightness": 317.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "1335",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7136,
+          29.6293
+        ]
+      },
+      "properties": {
+        "latitude": 29.6293,
+        "longitude": 75.7136,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 30.1,
+        "brightness": 363.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "1448",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.9626,
+          31.0978
+        ]
+      },
+      "properties": {
+        "latitude": 31.0978,
+        "longitude": 74.9626,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 16.7,
+        "brightness": 364.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1128",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5384,
+          31.539
+        ]
+      },
+      "properties": {
+        "latitude": 31.539,
+        "longitude": 75.5384,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 13.8,
+        "brightness": 313.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0637",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8534,
+          30.6402
+        ]
+      },
+      "properties": {
+        "latitude": 30.6402,
+        "longitude": 75.8534,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 2.8,
+        "brightness": 348.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "0614",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.5722,
+          29.3752
+        ]
+      },
+      "properties": {
+        "latitude": 29.3752,
+        "longitude": 74.5722,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 17.5,
+        "brightness": 338.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1042",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7402,
+          30.4621
+        ]
+      },
+      "properties": {
+        "latitude": 30.4621,
+        "longitude": 75.7402,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 35.4,
+        "brightness": 358.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "1315",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3572,
+          31.24
+        ]
+      },
+      "properties": {
+        "latitude": 31.24,
+        "longitude": 76.3572,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 11.2,
+        "brightness": 315.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1222",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5742,
+          30.3013
+        ]
+      },
+      "properties": {
+        "latitude": 30.3013,
+        "longitude": 75.5742,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 35.7,
+        "brightness": 347.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0703",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.2804,
+          30.2468
+        ]
+      },
+      "properties": {
+        "latitude": 30.2468,
+        "longitude": 75.2804,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 41.7,
+        "brightness": 323.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "0934",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.4703,
+          30.3664
+        ]
+      },
+      "properties": {
+        "latitude": 30.3664,
+        "longitude": 75.4703,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 15.2,
+        "brightness": 323.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "0728",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4687,
+          31.3009
+        ]
+      },
+      "properties": {
+        "latitude": 31.3009,
+        "longitude": 76.4687,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 7.0,
+        "brightness": 345.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "1453",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.7145,
+          29.2384
+        ]
+      },
+      "properties": {
+        "latitude": 29.2384,
+        "longitude": 74.7145,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 36.8,
+        "brightness": 323.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "1231",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4887,
+          30.4515
+        ]
+      },
+      "properties": {
+        "latitude": 30.4515,
+        "longitude": 76.4887,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 43.6,
+        "brightness": 319.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "0624",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3034,
+          29.8895
+        ]
+      },
+      "properties": {
+        "latitude": 29.8895,
+        "longitude": 76.3034,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 23.2,
+        "brightness": 333.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1442",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.856,
+          31.0679
+        ]
+      },
+      "properties": {
+        "latitude": 31.0679,
+        "longitude": 74.856,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 16.0,
+        "brightness": 363.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1403",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.6315,
+          31.1447
+        ]
+      },
+      "properties": {
+        "latitude": 31.1447,
+        "longitude": 74.6315,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 29.1,
+        "brightness": 337.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1410",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.668,
+          29.3479
+        ]
+      },
+      "properties": {
+        "latitude": 29.3479,
+        "longitude": 75.668,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 41.2,
+        "brightness": 313.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "0743",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.4287,
+          31.4407
+        ]
+      },
+      "properties": {
+        "latitude": 31.4407,
+        "longitude": 75.4287,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 45.3,
+        "brightness": 341.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0639",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.012,
+          29.4132
+        ]
+      },
+      "properties": {
+        "latitude": 29.4132,
+        "longitude": 76.012,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 28.2,
+        "brightness": 327.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1013",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.2226,
+          30.9413
+        ]
+      },
+      "properties": {
+        "latitude": 30.9413,
+        "longitude": 75.2226,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 14.6,
+        "brightness": 317.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "1029",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2293,
+          30.0221
+        ]
+      },
+      "properties": {
+        "latitude": 30.0221,
+        "longitude": 76.2293,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 5.8,
+        "brightness": 335.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "0704",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.6635,
+          30.5978
+        ]
+      },
+      "properties": {
+        "latitude": 30.5978,
+        "longitude": 75.6635,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 8.5,
+        "brightness": 329.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "0756",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1555,
+          29.8351
+        ]
+      },
+      "properties": {
+        "latitude": 29.8351,
+        "longitude": 75.1555,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 22.4,
+        "brightness": 339.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "1039",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3563,
+          31.758
+        ]
+      },
+      "properties": {
+        "latitude": 31.758,
+        "longitude": 76.3563,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 26.6,
+        "brightness": 346.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1419",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.7382,
+          31.6226
+        ]
+      },
+      "properties": {
+        "latitude": 31.6226,
+        "longitude": 74.7382,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 42.5,
+        "brightness": 324.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0747",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1264,
+          30.6384
+        ]
+      },
+      "properties": {
+        "latitude": 30.6384,
+        "longitude": 75.1264,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 30.0,
+        "brightness": 349.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0943",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1072,
+          30.849
+        ]
+      },
+      "properties": {
+        "latitude": 30.849,
+        "longitude": 75.1072,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 24.7,
+        "brightness": 359.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "0605",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4075,
+          30.8491
+        ]
+      },
+      "properties": {
+        "latitude": 30.8491,
+        "longitude": 76.4075,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 4.5,
+        "brightness": 328.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0840",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.8716,
+          31.7475
+        ]
+      },
+      "properties": {
+        "latitude": 31.7475,
+        "longitude": 74.8716,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 22.6,
+        "brightness": 348.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "1400",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6736,
+          29.4909
+        ]
+      },
+      "properties": {
+        "latitude": 29.4909,
+        "longitude": 76.6736,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 33.9,
+        "brightness": 318.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "0653",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7708,
+          30.16
+        ]
+      },
+      "properties": {
+        "latitude": 30.16,
+        "longitude": 75.7708,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 22.1,
+        "brightness": 312.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1157",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7361,
+          31.626
+        ]
+      },
+      "properties": {
+        "latitude": 31.626,
+        "longitude": 76.7361,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 4.3,
+        "brightness": 329.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "0942",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2943,
+          29.4673
+        ]
+      },
+      "properties": {
+        "latitude": 29.4673,
+        "longitude": 76.2943,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 42.7,
+        "brightness": 332.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "0859",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4886,
+          31.6177
+        ]
+      },
+      "properties": {
+        "latitude": 31.6177,
+        "longitude": 76.4886,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 46.9,
+        "brightness": 354.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "1201",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6263,
+          29.6663
+        ]
+      },
+      "properties": {
+        "latitude": 29.6663,
+        "longitude": 76.6263,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 38.1,
+        "brightness": 332.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "0917",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.1129,
+          29.6139
+        ]
+      },
+      "properties": {
+        "latitude": 29.6139,
+        "longitude": 76.1129,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 19.9,
+        "brightness": 312.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "1314",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6124,
+          29.7189
+        ]
+      },
+      "properties": {
+        "latitude": 29.7189,
+        "longitude": 76.6124,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 18.4,
+        "brightness": 355.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "0914",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.9442,
+          29.2615
+        ]
+      },
+      "properties": {
+        "latitude": 29.2615,
+        "longitude": 74.9442,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 17.4,
+        "brightness": 357.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "1022",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.4193,
+          30.8679
+        ]
+      },
+      "properties": {
+        "latitude": 30.8679,
+        "longitude": 75.4193,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 47.1,
+        "brightness": 339.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0607",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1008,
+          31.4803
+        ]
+      },
+      "properties": {
+        "latitude": 31.4803,
+        "longitude": 75.1008,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 28.9,
+        "brightness": 364.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "0606",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.2951,
+          30.7511
+        ]
+      },
+      "properties": {
+        "latitude": 30.7511,
+        "longitude": 75.2951,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 38.3,
+        "brightness": 334.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "1407",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8262,
+          30.2015
+        ]
+      },
+      "properties": {
+        "latitude": 30.2015,
+        "longitude": 75.8262,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 14.1,
+        "brightness": 349.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0633",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7384,
+          31.6065
+        ]
+      },
+      "properties": {
+        "latitude": 31.6065,
+        "longitude": 75.7384,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 35.2,
+        "brightness": 350.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "0923",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.6824,
+          30.3214
+        ]
+      },
+      "properties": {
+        "latitude": 30.3214,
+        "longitude": 76.6824,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 44.4,
+        "brightness": 344.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0746",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.6664,
+          31.5401
+        ]
+      },
+      "properties": {
+        "latitude": 31.5401,
+        "longitude": 75.6664,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 32.8,
+        "brightness": 327.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "1035",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.467,
+          29.5309
+        ]
+      },
+      "properties": {
+        "latitude": 29.5309,
+        "longitude": 75.467,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 45.3,
+        "brightness": 347.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0839",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.434,
+          30.6797
+        ]
+      },
+      "properties": {
+        "latitude": 30.6797,
+        "longitude": 75.434,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 40.4,
+        "brightness": 326.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "0927",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8953,
+          31.243
+        ]
+      },
+      "properties": {
+        "latitude": 31.243,
+        "longitude": 75.8953,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 17.2,
+        "brightness": 334.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0932",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.5727,
+          30.4303
+        ]
+      },
+      "properties": {
+        "latitude": 30.4303,
+        "longitude": 76.5727,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 38.7,
+        "brightness": 319.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0718",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9558,
+          30.5402
+        ]
+      },
+      "properties": {
+        "latitude": 30.5402,
+        "longitude": 75.9558,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 17.8,
+        "brightness": 355.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0943",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3551,
+          30.0071
+        ]
+      },
+      "properties": {
+        "latitude": 30.0071,
+        "longitude": 76.3551,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 9.2,
+        "brightness": 312.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "1339",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.6675,
+          31.4093
+        ]
+      },
+      "properties": {
+        "latitude": 31.4093,
+        "longitude": 74.6675,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 21.4,
+        "brightness": 344.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "0945",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.6371,
+          31.0105
+        ]
+      },
+      "properties": {
+        "latitude": 31.0105,
+        "longitude": 75.6371,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 13.6,
+        "brightness": 346.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "0657",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2711,
+          31.1525
+        ]
+      },
+      "properties": {
+        "latitude": 31.1525,
+        "longitude": 76.2711,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 7.3,
+        "brightness": 333.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "0851",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.6913,
+          31.6907
+        ]
+      },
+      "properties": {
+        "latitude": 31.6907,
+        "longitude": 75.6913,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 4.8,
+        "brightness": 323.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "0729",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5687,
+          29.5467
+        ]
+      },
+      "properties": {
+        "latitude": 29.5467,
+        "longitude": 75.5687,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 26.7,
+        "brightness": 340.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1148",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9091,
+          31.5177
+        ]
+      },
+      "properties": {
+        "latitude": 31.5177,
+        "longitude": 75.9091,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 35.2,
+        "brightness": 337.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "1428",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2104,
+          31.5327
+        ]
+      },
+      "properties": {
+        "latitude": 31.5327,
+        "longitude": 76.2104,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 24.1,
+        "brightness": 324.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0953",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2614,
+          30.8579
+        ]
+      },
+      "properties": {
+        "latitude": 30.8579,
+        "longitude": 76.2614,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 26.2,
+        "brightness": 344.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "1028",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1572,
+          29.4015
+        ]
+      },
+      "properties": {
+        "latitude": 29.4015,
+        "longitude": 75.1572,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 14.9,
+        "brightness": 327.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "1405",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.0319,
+          29.5598
+        ]
+      },
+      "properties": {
+        "latitude": 29.5598,
+        "longitude": 75.0319,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 34.1,
+        "brightness": 348.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "0726",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.748,
+          30.2598
+        ]
+      },
+      "properties": {
+        "latitude": 30.2598,
+        "longitude": 75.748,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 21.4,
+        "brightness": 321.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1224",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8434,
+          31.5526
+        ]
+      },
+      "properties": {
+        "latitude": 31.5526,
+        "longitude": 75.8434,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 34.1,
+        "brightness": 357.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "1230",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.309,
+          29.2153
+        ]
+      },
+      "properties": {
+        "latitude": 29.2153,
+        "longitude": 75.309,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 36.8,
+        "brightness": 356.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "1234",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7561,
+          31.1435
+        ]
+      },
+      "properties": {
+        "latitude": 31.1435,
+        "longitude": 75.7561,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 29.9,
+        "brightness": 322.1,
+        "acq_date": "2026-11-14",
+        "acq_time": "0917",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.5668,
+          30.3332
+        ]
+      },
+      "properties": {
+        "latitude": 30.3332,
+        "longitude": 74.5668,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 17.8,
+        "brightness": 347.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1246",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.575,
+          29.6291
+        ]
+      },
+      "properties": {
+        "latitude": 29.6291,
+        "longitude": 75.575,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 8.3,
+        "brightness": 344.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "0658",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7981,
+          30.2245
+        ]
+      },
+      "properties": {
+        "latitude": 30.2245,
+        "longitude": 75.7981,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 3.7,
+        "brightness": 345.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "0855",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.6157,
+          30.4004
+        ]
+      },
+      "properties": {
+        "latitude": 30.4004,
+        "longitude": 74.6157,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 19.7,
+        "brightness": 321.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "1121",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.372,
+          31.1792
+        ]
+      },
+      "properties": {
+        "latitude": 31.1792,
+        "longitude": 75.372,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 36.7,
+        "brightness": 355.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "1053",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.5446,
+          29.413
+        ]
+      },
+      "properties": {
+        "latitude": 29.413,
+        "longitude": 74.5446,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 27.0,
+        "brightness": 365.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "1114",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2968,
+          30.8904
+        ]
+      },
+      "properties": {
+        "latitude": 30.8904,
+        "longitude": 76.2968,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 32.2,
+        "brightness": 351.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0912",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9291,
+          31.382
+        ]
+      },
+      "properties": {
+        "latitude": 31.382,
+        "longitude": 75.9291,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 13.4,
+        "brightness": 336.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0736",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5696,
+          31.6642
+        ]
+      },
+      "properties": {
+        "latitude": 31.6642,
+        "longitude": 75.5696,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 14.2,
+        "brightness": 330.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0749",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7189,
+          31.3302
+        ]
+      },
+      "properties": {
+        "latitude": 31.3302,
+        "longitude": 76.7189,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 7.4,
+        "brightness": 311.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1036",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7038,
+          30.9611
+        ]
+      },
+      "properties": {
+        "latitude": 30.9611,
+        "longitude": 76.7038,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 20.5,
+        "brightness": 349.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "0737",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9427,
+          30.9956
+        ]
+      },
+      "properties": {
+        "latitude": 30.9956,
+        "longitude": 75.9427,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 7.1,
+        "brightness": 352.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0750",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.3001,
+          31.758
+        ]
+      },
+      "properties": {
+        "latitude": 31.758,
+        "longitude": 76.3001,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 18.3,
+        "brightness": 333.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "1104",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.2848,
+          30.5155
+        ]
+      },
+      "properties": {
+        "latitude": 30.5155,
+        "longitude": 75.2848,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 41.2,
+        "brightness": 355.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "0727",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.9618,
+          31.698
+        ]
+      },
+      "properties": {
+        "latitude": 31.698,
+        "longitude": 75.9618,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 40.2,
+        "brightness": 348.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "1211",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.7206,
+          31.1079
+        ]
+      },
+      "properties": {
+        "latitude": 31.1079,
+        "longitude": 76.7206,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 14.8,
+        "brightness": 354.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "1449",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5018,
+          30.4571
+        ]
+      },
+      "properties": {
+        "latitude": 30.4571,
+        "longitude": 75.5018,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 35.8,
+        "brightness": 324.8,
+        "acq_date": "2026-11-14",
+        "acq_time": "0953",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.1415,
+          31.63
+        ]
+      },
+      "properties": {
+        "latitude": 31.63,
+        "longitude": 75.1415,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 23.0,
+        "brightness": 351.3,
+        "acq_date": "2026-11-14",
+        "acq_time": "1221",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.4572,
+          29.2746
+        ]
+      },
+      "properties": {
+        "latitude": 29.2746,
+        "longitude": 76.4572,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 10.8,
+        "brightness": 321.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1021",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8712,
+          29.9271
+        ]
+      },
+      "properties": {
+        "latitude": 29.9271,
+        "longitude": 75.8712,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 42.5,
+        "brightness": 340.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "1412",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.1562,
+          29.4226
+        ]
+      },
+      "properties": {
+        "latitude": 29.4226,
+        "longitude": 76.1562,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 24.7,
+        "brightness": 351.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1341",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5308,
+          31.0508
+        ]
+      },
+      "properties": {
+        "latitude": 31.0508,
+        "longitude": 75.5308,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 3.3,
+        "brightness": 326.2,
+        "acq_date": "2026-11-14",
+        "acq_time": "1244",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.0271,
+          29.8326
+        ]
+      },
+      "properties": {
+        "latitude": 29.8326,
+        "longitude": 76.0271,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 19.3,
+        "brightness": 340.4,
+        "acq_date": "2026-11-14",
+        "acq_time": "1127",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7659,
+          31.7912
+        ]
+      },
+      "properties": {
+        "latitude": 31.7912,
+        "longitude": 75.7659,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 18.5,
+        "brightness": 335.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "1016",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.159,
+          29.7994
+        ]
+      },
+      "properties": {
+        "latitude": 29.7994,
+        "longitude": 76.159,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 16.9,
+        "brightness": 350.9,
+        "acq_date": "2026-11-14",
+        "acq_time": "0812",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.6137,
+          29.7626
+        ]
+      },
+      "properties": {
+        "latitude": 29.7626,
+        "longitude": 75.6137,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 35.5,
+        "brightness": 363.7,
+        "acq_date": "2026-11-14",
+        "acq_time": "1438",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.7312,
+          29.9358
+        ]
+      },
+      "properties": {
+        "latitude": 29.9358,
+        "longitude": 74.7312,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "n",
+        "frp": 11.3,
+        "brightness": 322.5,
+        "acq_date": "2026-11-14",
+        "acq_time": "0819",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.7285,
+          29.2368
+        ]
+      },
+      "properties": {
+        "latitude": 29.2368,
+        "longitude": 75.7285,
+        "satellite": "NOAA-20",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 15.0,
+        "brightness": 363.6,
+        "acq_date": "2026-11-14",
+        "acq_time": "1418",
+        "daynight": "D"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.7904,
+          31.0133
+        ]
+      },
+      "properties": {
+        "latitude": 31.0133,
+        "longitude": 74.7904,
+        "satellite": "NOAA-21",
+        "instrument": "VIIRS",
+        "confidence": "h",
+        "frp": 42.0,
+        "brightness": 337.0,
+        "acq_date": "2026-11-14",
+        "acq_time": "0636",
+        "daynight": "D"
+      }
+    }
+  ]
+}

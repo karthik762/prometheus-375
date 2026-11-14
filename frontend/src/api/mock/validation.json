@@ -1,0 +1,259 @@
+{
+  "holdout_year": 2020,
+  "mae": 142.3,
+  "mape": 6.8,
+  "before_after": [
+    {
+      "month": "2008-04",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2008-05",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2008-10",
+      "raw": 3200,
+      "harmonized": 7520.0,
+      "uncertainty_lo": 6918.4,
+      "uncertainty_hi": 8121.6
+    },
+    {
+      "month": "2008-11",
+      "raw": 8500,
+      "harmonized": 19975.0,
+      "uncertainty_lo": 18377.0,
+      "uncertainty_hi": 21573.0
+    },
+    {
+      "month": "2009-04",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2009-05",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2009-10",
+      "raw": 3200,
+      "harmonized": 7520.0,
+      "uncertainty_lo": 6918.4,
+      "uncertainty_hi": 8121.6
+    },
+    {
+      "month": "2009-11",
+      "raw": 8500,
+      "harmonized": 19975.0,
+      "uncertainty_lo": 18377.0,
+      "uncertainty_hi": 21573.0
+    },
+    {
+      "month": "2010-04",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2010-05",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2010-10",
+      "raw": 3200,
+      "harmonized": 7520.0,
+      "uncertainty_lo": 6918.4,
+      "uncertainty_hi": 8121.6
+    },
+    {
+      "month": "2010-11",
+      "raw": 8500,
+      "harmonized": 19975.0,
+      "uncertainty_lo": 18377.0,
+      "uncertainty_hi": 21573.0
+    },
+    {
+      "month": "2011-04",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2011-05",
+      "raw": 1800,
+      "harmonized": 4230.0,
+      "uncertainty_lo": 3891.6,
+      "uncertainty_hi": 4568.4
+    },
+    {
+      "month": "2011-10",
+      "raw": 3200,
+      "harmonized": 7520.0,
+      "uncertainty_lo": 6918.4,
+      "uncertainty_hi": 8121.6
+    },
+    {
+      "month": "2011-11",
+      "raw": 8500,
+      "harmonized": 19975.0,
+      "uncertainty_lo": 18377.0,
+      "uncertainty_hi": 21573.0
+    },
+    {
+      "month": "2012-04",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2012-05",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2012-10",
+      "raw": 7400,
+      "harmonized": 7400.0,
+      "uncertainty_lo": 6808.0,
+      "uncertainty_hi": 7992.0
+    },
+    {
+      "month": "2012-11",
+      "raw": 19800,
+      "harmonized": 19800.0,
+      "uncertainty_lo": 18216.0,
+      "uncertainty_hi": 21384.0
+    },
+    {
+      "month": "2013-04",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2013-05",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2013-10",
+      "raw": 7400,
+      "harmonized": 7400.0,
+      "uncertainty_lo": 6808.0,
+      "uncertainty_hi": 7992.0
+    },
+    {
+      "month": "2013-11",
+      "raw": 19800,
+      "harmonized": 19800.0,
+      "uncertainty_lo": 18216.0,
+      "uncertainty_hi": 21384.0
+    },
+    {
+      "month": "2014-04",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2014-05",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2014-10",
+      "raw": 7400,
+      "harmonized": 7400.0,
+      "uncertainty_lo": 6808.0,
+      "uncertainty_hi": 7992.0
+    },
+    {
+      "month": "2014-11",
+      "raw": 19800,
+      "harmonized": 19800.0,
+      "uncertainty_lo": 18216.0,
+      "uncertainty_hi": 21384.0
+    },
+    {
+      "month": "2015-04",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2015-05",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2015-10",
+      "raw": 7400,
+      "harmonized": 7400.0,
+      "uncertainty_lo": 6808.0,
+      "uncertainty_hi": 7992.0
+    },
+    {
+      "month": "2015-11",
+      "raw": 19800,
+      "harmonized": 19800.0,
+      "uncertainty_lo": 18216.0,
+      "uncertainty_hi": 21384.0
+    },
+    {
+      "month": "2016-04",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2016-05",
+      "raw": 4200,
+      "harmonized": 4200.0,
+      "uncertainty_lo": 3864.0,
+      "uncertainty_hi": 4536.0
+    },
+    {
+      "month": "2016-10",
+      "raw": 7400,
+      "harmonized": 7400.0,
+      "uncertainty_lo": 6808.0,
+      "uncertainty_hi": 7992.0
+    },
+    {
+      "month": "2016-11",
+      "raw": 19800,
+      "harmonized": 19800.0,
+      "uncertainty_lo": 18216.0,
+      "uncertainty_hi": 21384.0
+    }
+  ]
+}

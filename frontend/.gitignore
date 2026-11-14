@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Production Build
+dist/
+
+# Environment Variables
+.env
+.env.local
+
+# Vercel Deployment Cache
+.vercel/
+
+# Operating System Metadata
+.DS_Store
+
+# TypeScript Incremental Build Cache
+*.tsbuildinfo

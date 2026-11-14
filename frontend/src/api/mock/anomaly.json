@@ -1,0 +1,10 @@
+{
+  "current": 8420.0,
+  "median": 10540.0,
+  "p10": 6200.0,
+  "p90": 14200.0,
+  "z_score": -0.68,
+  "percentile": 36.4,
+  "onset_shift_days": -4.0,
+  "is_month_to_date": true
+}
