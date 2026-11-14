@@ -37,13 +37,17 @@ app.add_middleware(
 def get_parquet_path() -> str:
     """Resolve PARQUET_PATH from env or sensible defaults."""
     env_path = os.getenv("PARQUET_PATH")
-    if env_path:
+    if env_path and os.path.exists(env_path):
         return env_path
 
-    # Check common relative locations
+    # Check common relative locations in priority order
     default_candidates = [
         "data/processed/harmonized.parquet",
         "../data/processed/harmonized.parquet",
+        str(Path(__file__).resolve().parent.parent / "data" / "processed" / "harmonized.parquet"),
+        "data/harmonized.parquet",
+        "../data/harmonized.parquet",
+        "backend/data/harmonized.parquet",
         "../data-sample/harmonized_sample.parquet",
         "data-sample/harmonized_sample.parquet",
         str(Path(__file__).resolve().parent.parent / "data-sample" / "harmonized_sample.parquet"),
@@ -52,7 +56,7 @@ def get_parquet_path() -> str:
         if os.path.exists(candidate):
             return candidate
 
-    return "../data-sample/harmonized_sample.parquet"
+    return "data/processed/harmonized.parquet"
 
 
 # --- Pydantic Models matching contract ---

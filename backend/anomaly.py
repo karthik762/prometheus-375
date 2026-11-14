@@ -134,7 +134,9 @@ def compute_on_the_fly_anomaly(
         candidates = [
             "data/processed/harmonized.parquet",
             "../data/processed/harmonized.parquet",
+            str(Path(__file__).resolve().parent.parent / "data" / "processed" / "harmonized.parquet"),
             "data/processed/harmonized_india.parquet",
+            "../data/processed/harmonized_india.parquet",
             "../data-sample/harmonized_sample.parquet",
             "data-sample/harmonized_sample.parquet",
         ]
