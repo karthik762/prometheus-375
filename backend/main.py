@@ -7,6 +7,11 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+try:
+    from backend.spatial import build_spatial_filter, init_duckdb_spatial
+except ImportError:
+    from spatial import build_spatial_filter, init_duckdb_spatial
+
 load_dotenv()
 
 app = FastAPI(
@@ -116,10 +121,11 @@ def calendar(
     start: Optional[str] = Query(None, description="Start month in YYYY-MM format"),
     end: Optional[str] = Query(None, description="End month in YYYY-MM format"),
     bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
-    polygon: Optional[str] = Query(None, description="GeoJSON polygon string (reserved for B2)"),
+    polygon: Optional[str] = Query(None, description="GeoJSON polygon string (Polygon, MultiPolygon, Feature, FeatureCollection)"),
 ):
     """
     Return burning-activity calendar aggregated monthly for the specified area and date range.
+    Supports both bbox and GeoJSON polygon filtering using DuckDB spatial centroids.
     """
     parquet_path = get_parquet_path()
     if not os.path.exists(parquet_path):
@@ -129,8 +135,8 @@ def calendar(
         )
 
     # Build SQL filter conditions and parameters
-    conditions = []
-    params = [parquet_path]
+    conditions: List[str] = []
+    params: List = [parquet_path]
 
     if start:
         conditions.append("month >= ?")
@@ -140,19 +146,14 @@ def calendar(
         conditions.append("month <= ?")
         params.append(end)
 
-    if bbox:
-        try:
-            parts = [float(p.strip()) for p in bbox.split(",")]
-            if len(parts) != 4:
-                raise ValueError("bbox must contain exactly 4 comma-separated numbers")
-            min_lon, min_lat, max_lon, max_lat = parts
-            conditions.append("lon >= ? AND lon <= ? AND lat >= ? AND lat <= ?")
-            params.extend([min_lon, max_lon, min_lat, max_lat])
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid bbox parameter format. Expected minLon,minLat,maxLon,maxLat: {e}",
-            )
+    # Spatial filtering via reusable helper (Task B2)
+    spatial_conditions, spatial_params, requires_spatial = build_spatial_filter(
+        bbox=bbox,
+        polygon=polygon,
+    )
+    if spatial_conditions:
+        conditions.extend(spatial_conditions)
+        params.extend(spatial_params)
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
@@ -171,7 +172,11 @@ def calendar(
 
     con = duckdb.connect(database=":memory:", read_only=False)
     try:
+        if requires_spatial:
+            init_duckdb_spatial(con)
         df = con.execute(query, params).df()
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"DuckDB query execution failed: {e}")
     finally:
