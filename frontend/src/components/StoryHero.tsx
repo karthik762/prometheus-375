@@ -1,6 +1,8 @@
 /**
- * StoryHero: a 500vh scroll-scrubbed hero. A sticky 100vh stage shows one SVG whose state is a
- * pure function of scroll progress p (0..1). One passive scroll listener + rAF writes CSS
+ * StoryHero: a 900vh scroll-scrubbed hero. A sticky 100vh stage shows one SVG whose state is a
+ * pure function of a damped scroll progress p (0..1), remapped by beatProgress() into 6 beats
+ * (eased transition, then a still hold where that beat's line reads). A passive scroll listener
+ * kicks a rAF loop (it stops once p settles) that writes CSS
  * custom properties (--p on the stage, a few per-chart vars on each chart <g>); all motion is
  * CSS calc() on transform / opacity (plus stroke-dashoffset for the drawn lines). React renders
  * once per layout (wide / narrow), never per scroll frame.
@@ -72,7 +74,21 @@ const LINES = [
   'And it tells you what’s unusual today.',
   'Satellites keep retiring. Our record doesn’t break.',
 ];
-const BREAKS = [0, 0.15, 0.3, 0.45, 0.65, 0.85, 1];
+
+// ------------------------------------------------------------------------------- timing
+// Tune the story here. BEATS are the 6 beat boundaries in scroll progress (0..1). Inside each
+// beat the first MOVE share is the (eased) transition; the rest is a hold where nothing moves
+// and that beat's line is readable. The line fades in over the first FADE_IN of the hold and
+// out over the last FADE_OUT, so text never swaps mid-motion.
+const BEATS = [0, 0.15, 0.3, 0.45, 0.65, 0.85, 1] as const;
+const MOVE = 0.6;
+const FADE_IN = 0.15;
+const FADE_OUT = 0.1;
+// Scroll damping: per-60Hz-frame approach rate, max per-frame step, and the settle threshold.
+const DAMP = 0.08;
+const MAX_STEP = 0.012;
+const SETTLE = 0.0005;
+const FRAME_MS = 1000 / 60;
 
 const fmt = (v: number) => Math.round(v).toLocaleString('en-US');
 
@@ -330,9 +346,43 @@ const seg = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
 const ease = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-function lineIndex(p: number): number {
-  for (let i = BREAKS.length - 2; i > 0; i--) if (p >= BREAKS[i]) return i;
-  return 0;
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+const BEAT_COUNT = BEATS.length - 1;
+const holdStart = (i: number) => BEATS[i] + MOVE * (BEATS[i + 1] - BEATS[i]);
+/** First p at which beat i's line is fully readable (hold start + fade-in). */
+const readableAt = (i: number) => {
+  const h0 = holdStart(i);
+  return i === 0 ? h0 : h0 + FADE_IN * (BEATS[i + 1] - h0);
+};
+
+interface BeatState {
+  /** Per-beat eased transition progress: 0 before the beat, 1 from its hold onward. */
+  s: number[];
+  /** Index of the beat containing p. */
+  beat: number;
+  /** Per-beat line opacity (0..1). */
+  text: number[];
+}
+
+/** The whole scroll→story remap: p (damped scroll progress) → per-beat motion + text. */
+function beatProgress(p: number): BeatState {
+  const s: number[] = [];
+  const text: number[] = [];
+  let beat = 0;
+  for (let i = 0; i < BEAT_COUNT; i++) {
+    const a = BEATS[i];
+    const b = BEATS[i + 1];
+    const h0 = holdStart(i);
+    const hold = b - h0;
+    if (p >= a) beat = i;
+    s.push(easeInOutCubic(seg(p, a, h0)));
+    // Line 0 is up from the start (nothing precedes it); the last line never fades out.
+    const fadeIn = i === 0 ? 1 : seg(p, h0, h0 + FADE_IN * hold);
+    const fadeOut = i === BEAT_COUNT - 1 ? 1 : 1 - seg(p, b - FADE_OUT * hold, b);
+    text.push(Math.min(fadeIn, fadeOut));
+  }
+  return { s, beat: Math.min(beat, BEAT_COUNT - 1), text };
 }
 
 const NARROW_Q = '(max-width: 640px)';
@@ -514,6 +564,8 @@ export default function StoryHero() {
   const chartRefs = useRef<(SVGGElement | null)[]>([]);
   const counterRef = useRef<HTMLSpanElement | null>(null);
   const liveRef = useRef<HTMLParagraphElement | null>(null);
+  const lineRefs = useRef<(HTMLElement | null)[]>([]);
+  const dotRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -533,11 +585,13 @@ export default function StoryHero() {
     const announced = new Set<number>();
     let counterVal = NaN;
     let active = '';
+    let curBeat = -1;
 
     const g0 = geos[0];
     const render = (p: number, inView: boolean) => {
       setVar(stage, '--p', p);
-      const [s1, s2, s3, s4, s5, s6] = BREAKS.slice(0, -1).map((a, i) => seg(p, a, BREAKS[i + 1]));
+      const { s, beat, text } = beatProgress(p);
+      const [s1, s2, s3, s4, s5, s6] = s;
 
       const shrink = ease(seg(s4, 0, 0.3));
       const expand = ease(seg(s5, 0, 0.3));
@@ -590,22 +644,36 @@ export default function StoryHero() {
       }
 
       setVar(stage, '--stat', seg(s5, 0.15, 0.3));
-      setVar(stage, '--lock', seg(s5, 0.88, 0.98));
+      // Beat 6's motion: the "−N%" locks in, then the headline + buttons arrive in its hold.
+      setVar(stage, '--lock', s6);
       const v = Math.round(lerp(NOV_USUAL, NOV_NOW, sink));
       if (v !== counterVal && counterRef.current) {
         counterVal = v;
         counterRef.current.textContent = fmt(v);
       }
-      const act = s6 > 0.2 ? '1' : '0';
+
+      const last = BEAT_COUNT - 1;
+      for (let i = 0; i < BEAT_COUNT; i++) setVar(lineRefs.current[i], '--lo', text[i]);
+      setVar(stage, '--ao', text[last]);
+      const act = text[last] > 0.5 ? '1' : '0';
       if (act !== active) {
         active = act;
         stage.dataset.active = act;
       }
 
-      const idx = lineIndex(p);
-      if (inView && !announced.has(idx) && liveRef.current) {
-        announced.add(idx);
-        liveRef.current.textContent = LINES[idx];
+      if (beat !== curBeat) {
+        curBeat = beat;
+        dotRefs.current.forEach((d, i) => {
+          if (!d) return;
+          if (i === beat) d.setAttribute('aria-current', 'step');
+          else d.removeAttribute('aria-current');
+        });
+      }
+
+      const shown = text.findIndex((o) => o > 0.5);
+      if (inView && shown >= 0 && !announced.has(shown) && liveRef.current) {
+        announced.add(shown);
+        liveRef.current.textContent = LINES[shown];
       }
     };
 
@@ -614,18 +682,43 @@ export default function StoryHero() {
       return;
     }
 
+    // pRaw is where the scrollbar is; pDisp chases it (damped + speed-capped) and drives
+    // render(). The rAF loop runs only while they differ, and restarts on scroll/resize.
+    let pRaw = 0;
+    let pDisp = 0;
+    let inView = false;
     let raf = 0;
-    const update = () => {
-      raf = 0;
+    let last = 0;
+    const measure = () => {
       const rect = section.getBoundingClientRect();
       const vh = window.innerHeight;
-      const span = Math.max(1, rect.height - vh);
-      render(clamp01(-rect.top / span), rect.bottom > 0 && rect.top < vh);
+      pRaw = clamp01(-rect.top / Math.max(1, rect.height - vh));
+      inView = rect.bottom > 0 && rect.top < vh;
+    };
+    const tick = (now: number) => {
+      measure();
+      const f = Math.min(last ? now - last : FRAME_MS, 4 * FRAME_MS) / FRAME_MS;
+      last = now;
+      const d = pRaw - pDisp;
+      if (Math.abs(d) < SETTLE) {
+        pDisp = pRaw;
+        render(pDisp, inView);
+        raf = 0;
+        last = 0;
+        return;
+      }
+      const cap = MAX_STEP * f;
+      const step = d * (1 - Math.pow(1 - DAMP, f));
+      pDisp += step > cap ? cap : step < -cap ? -cap : step;
+      render(pDisp, inView);
+      raf = requestAnimationFrame(tick);
     };
     const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
+      if (!raf) raf = requestAnimationFrame(tick);
     };
-    update();
+    measure();
+    pDisp = pRaw; // no catch-up animation on load or after a layout switch
+    render(pDisp, inView);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     return () => {
@@ -635,13 +728,45 @@ export default function StoryHero() {
     };
   }, [reduced, layout, geos]);
 
+  /** Absolute scrollY at which scroll progress equals p. */
+  const scrollYAt = (p: number) => {
+    const section = sectionRef.current;
+    if (!section) return null;
+    const rect = section.getBoundingClientRect();
+    return window.scrollY + rect.top + Math.max(0, rect.height - window.innerHeight) * p;
+  };
+  // 'instant', not 'auto': global.css sets html { scroll-behavior: smooth }, which 'auto' obeys.
+  const behavior: ScrollBehavior = reduced ? 'instant' : 'smooth';
+
+  // Rail: land where the beat's hold is settled and its line fully faded in.
+  const goToBeat = (i: number) => {
+    const top = scrollYAt(readableAt(i));
+    if (top !== null) window.scrollTo({ top, behavior });
+  };
+
+  const skipIntro = () => {
+    const target = document.getElementById('explore');
+    if (target) {
+      if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+      target.scrollIntoView({ behavior, block: 'start' });
+      target.focus({ preventScroll: true });
+      return;
+    }
+    const top = scrollYAt(1);
+    if (top !== null) window.scrollTo({ top: top + window.innerHeight, behavior });
+  };
+
   // Keyboard users tabbing to the buttons jump to the settled state.
   const onActionsFocus = () => {
+    if (reduced) return;
     const section = sectionRef.current;
-    if (reduced || !section) return;
+    if (!section) return;
     const rect = section.getBoundingClientRect();
     const span = rect.height - window.innerHeight;
-    if (-rect.top / span < 0.9) window.scrollTo({ top: window.scrollY + rect.top + span * 0.97 });
+    const target = readableAt(BEAT_COUNT - 1);
+    if (-rect.top / span < target) {
+      window.scrollTo({ top: window.scrollY + rect.top + span * target, behavior: 'instant' });
+    }
   };
 
   const headlineId = `${uid}-headline`;
@@ -666,7 +791,9 @@ export default function StoryHero() {
                   key={i}
                   className="sh-line"
                   aria-hidden={reduced ? undefined : true}
-                  style={vars({ '--a': i === 0 ? -1 : BREAKS[i], '--b': BREAKS[i + 1] })}
+                  ref={(el) => {
+                    lineRefs.current[i] = el;
+                  }}
                 >
                   {t}
                 </p>
@@ -674,7 +801,9 @@ export default function StoryHero() {
               <h2
                 id={headlineId}
                 className="sh-line sh-headline"
-                style={vars({ '--a': BREAKS[BREAKS.length - 2], '--b': 2 })}
+                ref={(el) => {
+                  lineRefs.current[LINES.length - 1] = el;
+                }}
               >
                 {LINES[LINES.length - 1]}
               </h2>
@@ -778,6 +907,27 @@ export default function StoryHero() {
             }}
           />
         </svg>
+
+        <button type="button" className="sh-skip" onClick={skipIntro}>
+          Skip intro <span aria-hidden="true">↓</span>
+        </button>
+
+        {!reduced && (
+          <nav className="sh-rail" aria-label="Story steps">
+            {LINES.map((t, i) => (
+              <button
+                key={i}
+                type="button"
+                className="sh-dot"
+                aria-label={`Step ${i + 1} of ${LINES.length}: ${t}`}
+                onClick={() => goToBeat(i)}
+                ref={(el) => {
+                  dotRefs.current[i] = el;
+                }}
+              />
+            ))}
+          </nav>
+        )}
 
         <p className="sh-through">{DATA_THROUGH}</p>
         <p className="sh-sr" aria-live="polite" ref={liveRef} />

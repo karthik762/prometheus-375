@@ -1,11 +1,11 @@
 /* StoryHero: every animated value is a calc() of custom properties written by the scroll
-   loop (--p, --stat, --lock on .sh-stage; --tx --ty --k --o --lab --r --crack --fix --fx
+   loop (--p, --stat, --lock, --ao on .sh-stage; --lo on each .sh-line; --tx --ty --k --o --lab --r --crack --fix --fx
    --draw --sw --shk --dim --focus --sink on each .sh-chart). Only transform / opacity
    (and stroke-dashoffset for drawn lines) change per frame. */
 
 .sh-section {
   position: relative;
-  height: 500vh;
+  height: 900vh;
   background: #0d0e18;
   color: #ffe3c4;
 }
@@ -40,7 +40,7 @@
 }
 
 .sh-line {
-  --lo: clamp(0, min((var(--p) - var(--a)) / 0.03 + 0.5, (var(--b) - var(--p)) / 0.03 + 0.5), 1);
+  --lo: 0;
   grid-area: 1 / 1;
   align-self: end;
   margin: 0;
@@ -57,13 +57,12 @@
 }
 
 .sh-actions {
-  --ao: clamp(0, (var(--p) - 0.88) / 0.05, 1);
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 22px;
-  opacity: var(--ao);
-  transform: translateY(calc((1 - var(--ao)) * 14px));
+  opacity: var(--ao, 0);
+  transform: translateY(calc((1 - var(--ao, 0)) * 14px));
   pointer-events: none;
 }
 .sh-stage[data-active="1"] .sh-actions,
@@ -150,6 +149,72 @@
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: #b89c6b;
+}
+
+/* Skip intro (top-right) and the beat rail (right edge). */
+.sh-skip {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: clamp(16px, 5vw, 80px);
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(184, 156, 107, 0.45);
+  border-radius: 999px;
+  background: rgba(13, 14, 24, 0.6);
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #b89c6b;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.sh-skip:hover {
+  color: #ffe3c4;
+  border-color: #b89c6b;
+}
+
+.sh-rail {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-50%);
+}
+.sh-dot {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.sh-dot::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #b89c6b;
+  opacity: 0.5;
+  transition: transform 0.2s, background-color 0.2s, opacity 0.2s;
+}
+.sh-dot:hover::before {
+  opacity: 0.9;
+}
+.sh-dot[aria-current="step"]::before {
+  background: #e6863f;
+  opacity: 1;
+  transform: scale(1.4);
+}
+.sh-skip:focus-visible,
+.sh-dot:focus-visible {
+  outline: 2px solid #ffe3c4;
+  outline-offset: -6px;
+  border-radius: 999px;
 }
 
 .sh-sr {
@@ -416,7 +481,9 @@
   .sh-star.is-tw {
     animation: none;
   }
-  .sh-btn {
+  .sh-btn,
+  .sh-skip,
+  .sh-dot::before {
     transition: none;
   }
 }
