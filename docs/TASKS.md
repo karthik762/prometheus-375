@@ -37,7 +37,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [ ] **B6** K — Deploy backend to Render (parquet bundled), share URL — after I1 — due Sat 23:30
 - [x] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00 — done: verified on real backend (B5 c034313) — /export.csv + /export_analytics.csv download as attachments and follow the selected area, /validation JSON (2020 holdout, MAPE 11.37%); live layer renders NOAA-20/21 points (snapshot fallback locally — needs FIRMS_MAP_KEY on Render for true NRT)
 - [ ] **F6** R — Before/after proof chart + uncertainty bands — after B5 — due Sun 01:00
-- [ ] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30
+- [ ] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30 — **Waiting on dependency (B6 URL)**: frontend deploy-ready (Snehitha) — `npm run build` passes on main; static build verified cross-origin against the real backend (F3/F4/F5 checks). Vercel settings: Root Directory `frontend`, preset Vite, env `VITE_API_URL=<Render URL, no trailing slash>`
 
 ## Sunday
 - [ ] **S1** S — React go/no-go (else Streamlit fallback) (help: Karthik, Rishitha, Poojitha) — after F7 — due Sun 10:00
