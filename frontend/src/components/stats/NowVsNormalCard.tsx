@@ -2,7 +2,7 @@ import React from 'react';
 import { useAnomaly } from '../../hooks/useAnomaly';
 import { useSelection, CURRENT_MONTH } from '../../hooks/useSelection';
 import { CountUp } from './CountUp';
-import { areaErrorCopy, formatCount, formatMonthShort } from '../../lib/format';
+import { areaErrorCopy, dayCount, formatCount, formatMonthShort, ordinal } from '../../lib/format';
 import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 import { OUTSIDE_COVERAGE_TITLE, OUTSIDE_COVERAGE_TEXT } from '../../lib/coverage';
@@ -166,7 +166,7 @@ export const NowVsNormalCard: React.FC = () => {
               >
                 Season{' '}
                 <span style={{ color: 'var(--color-gold)' }}>
-                  ≥ {Math.round(onsetMin)} days later than usual
+                  ≥ {dayCount(onsetMin)} later than usual
                 </span>{' '}
                 — not started yet
               </div>
@@ -186,7 +186,7 @@ export const NowVsNormalCard: React.FC = () => {
                 <span style={{ color: 'var(--color-gold)' }}>
                   {Math.round(onset) === 0
                     ? 'on schedule'
-                    : `${Math.abs(onset).toFixed(0)} days ${onset < 0 ? 'early' : 'late'}`}
+                    : `${dayCount(onset)} ${onset < 0 ? 'early' : 'late'}`}
                 </span>
                 .
               </div>
@@ -211,7 +211,7 @@ export const NowVsNormalCard: React.FC = () => {
                 <span>Historical rank and z-score need at least 3 earlier years.</span>
               ) : (
                 <>
-                  <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
+                  <span>Historical rank: {ordinal(anomaly.percentile)} percentile</span>
                   <span>Z-Score: {anomaly.z_score >= 0 ? `+${anomaly.z_score.toFixed(2)}` : anomaly.z_score.toFixed(2)}σ</span>
                 </>
               )}

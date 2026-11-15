@@ -80,3 +80,19 @@ export function areaErrorCopy(
     subtext: `Try a smaller area, or retry. ${error.timedOut ? 'The server timed out.' : error.message}`,
   };
 }
+
+/** 1 → "1st", 2 → "2nd", 3 → "3rd", 11–13 → "th", 23 → "23rd". Rounds first. */
+export function ordinal(value: number): string {
+  const n = Math.round(value);
+  const lastTwo = Math.abs(n) % 100;
+  const last = Math.abs(n) % 10;
+  const suffix =
+    lastTwo >= 11 && lastTwo <= 13 ? 'th' : last === 1 ? 'st' : last === 2 ? 'nd' : last === 3 ? 'rd' : 'th';
+  return `${n}${suffix}`;
+}
+
+/** 1 → "1 day", 0/2/… → "N days". Rounds first. */
+export function dayCount(value: number): string {
+  const n = Math.round(Math.abs(value));
+  return `${n} ${n === 1 ? 'day' : 'days'}`;
+}
