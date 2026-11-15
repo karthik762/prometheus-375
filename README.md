@@ -20,3 +20,6 @@ Copy `.env.example` to `.env` and add your FIRMS MAP_KEY. Never commit `.env`.
 
 ## Deploy
 Repo and all deploys owned by Karthik: backend → Render, frontend → Vercel.
+
+## License
+MIT, see LICENSE. Data: NASA FIRMS.
