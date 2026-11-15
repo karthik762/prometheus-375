@@ -27,7 +27,7 @@ Satellites have mapped active fires for more than 20 years, but the record is sp
 | VIIRS | NOAA-20 | Apr 2018 → | 375 m |
 | VIIRS | NOAA-21 | Mar 2023 → | 375 m |
 
-VIIRS sees far more small fires than MODIS, and every time a satellite joins, raw totals jump. Across India, raw hotspot counts rise **+706%** from 2011 to 2012 just because VIIRS arrived. The harmonized series rises 26%. Nothing on the ground changed that much. A fire manager who plots raw counts sees fake trends at 2002, 2012, 2018 and 2023. And because the MODIS satellites are near the end of their lives, the long history has to be carried forward onto VIIRS.
+VIIRS sees far more small fires than MODIS, and every time a satellite joins, raw totals jump. In Punjab & Haryana, raw yearly hotspot counts rise **+523%** from 2011 to 2012 and +103% from 2017 to 2018, just because VIIRS satellites joined. The harmonized series rises 12% and 11%. A fire manager who plots raw counts sees fake trends at 2002, 2012, 2018 and 2023. And because the MODIS satellites are near the end of their lives, the long history has to be carried forward onto VIIRS.
 
 ## What we built
 
@@ -51,7 +51,7 @@ NASA FIRMS archive + NRT CSVs
        03_satfix     average per satellite within each family (never raw totals),
                      so a new satellite doesn't create a jump
        04_fit        MODIS → VIIRS ratio per 2.5° zone × month of year (Punjab+Haryana its own zone),
-                     pooled over the 2012–2026 overlap; bootstrap 10–90% band = uncertainty
+                     pooled over Feb 2012–Oct 2026 with 2020 held out; bootstrap 10–90% band = uncertainty
        05_series     one harmonized series: VIIRS where it exists, converted MODIS before it
        06_validate   test on 2020, a year the fit never saw
        07_anomaly    current vs same month of all prior years (day-matched for the current month)
@@ -62,7 +62,18 @@ NASA FIRMS archive + NRT CSVs
             └─ frontend/  React + Vite + TypeScript, MapLibre GL, terra-draw, Recharts
 ```
 
-**Validation (2020 held out):** with zone × month ratios, monthly error for India is **11.4% MAPE** (bias +0.9%). A single global ratio gives 24.8%. Other regions: Brazil 7.9%, Australia 9.4%, California 15.6%, Greece 26.6%. Greece has too few fires per zone, so its zones fall back to region-wide ratios. MAPE is computed only over months with at least 10 actual fires.
+**Validation (2020 held out, never seen by the fit):** we converted 2020 MODIS to the VIIRS scale and compared it with what VIIRS actually saw. Errors are for monthly totals; MAPE counts only months with at least 10 fires.
+
+| Area (2020, monthly totals) | Zone × month ratios | One ratio for the whole region |
+|---|---|---|
+| India | **11.4%** MAPE (bias +0.9%) | 24.8% |
+| Punjab & Haryana | **20.8%** | 75.6% |
+| Brazil | 7.9% | 19.7% |
+| SE Australia | 9.4% | 13.3% |
+| California | 15.6% | 30.8% |
+| Greece | 26.6% | 24.4% |
+
+Zones help everywhere except Greece, which has too few fires per zone to fit them well. Smaller areas are noisier: for a single 2.5° zone, monthly MAPE is 35–53%.
 
 **API endpoints** (each takes `bbox=minLon,minLat,maxLon,maxLat` or `polygon=<GeoJSON>`):
 `/calendar?start&end` · `/anomaly?month` · `/live?days=7` · `/export.csv?start&end` · `/export_analytics.csv` · `/presets` · `/validation` · `/health`
