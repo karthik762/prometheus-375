@@ -19,7 +19,10 @@ export const NowVsNormalCard: React.FC = () => {
   const baselineEnd = Number(selectedMonth.slice(0, 4)) - 1;
   // Early months (≈2001–2003) have only 1–2 earlier years: the p10–p90 band collapses to one
   // value and z hits the backend's ±10 cap (e.g. Jul 2002 → z −10, 0th pct). Don't show those.
-  const thinBaseline = !!anomaly && (anomaly.p10 === anomaly.p90 || Math.abs(anomaly.z_score) >= 10);
+  // No fires this month nor in any earlier year (sea, tiny area, outside the 5 regions):
+  // backend returns all zeros and p10 = p90 = 0, which must not read as "too few years".
+  const noFires = !!anomaly && anomaly.current === 0 && anomaly.median === 0 && anomaly.p90 === 0;
+  const thinBaseline = !noFires && !!anomaly && (anomaly.p10 === anomaly.p90 || Math.abs(anomaly.z_score) >= 10);
 
   return (
     <div
@@ -72,7 +75,7 @@ export const NowVsNormalCard: React.FC = () => {
           ) : (
             <ErrorState
               height="240px"
-              message="Anomaly metrics unavailable"
+              message="Couldn't load this month's numbers"
               subtext={error.message}
               onRetry={refetch}
             />
@@ -105,7 +108,12 @@ export const NowVsNormalCard: React.FC = () => {
                 marginBottom: 'var(--space-sm)',
               }}
             >
-              {thinBaseline ? (
+              {noFires ? (
+                <>
+                  No fires recorded in this area in {monthName} in any year of the record. Try a
+                  bigger area or a preset.
+                </>
+              ) : thinBaseline ? (
                 <>
                   Fires in {monthName}. Too few earlier years in the record (it starts Nov 2000) to
                   define a normal {monthName} yet.
@@ -173,7 +181,9 @@ export const NowVsNormalCard: React.FC = () => {
                 color: 'var(--color-text-tertiary)',
               }}
             >
-              {thinBaseline ? (
+              {noFires ? (
+                <span>No rank or z-score: there is nothing to compare.</span>
+              ) : thinBaseline ? (
                 <span>Historical rank and z-score need at least 3 earlier years.</span>
               ) : (
                 <>

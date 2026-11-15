@@ -66,10 +66,13 @@ async function request<T>(
           message: 'Not available yet',
         } as ApiError;
       }
-      const errText = await res.text().catch(() => '');
+      // Keep raw server text out of the UI; sections show this message to visitors
       throw {
         status: res.status,
-        message: errText || `API request failed with status ${res.status}`,
+        message:
+          res.status >= 500
+            ? `The data server had a problem (HTTP ${res.status}). Try again in a moment.`
+            : `The data server rejected this request (HTTP ${res.status}).`,
       } as ApiError;
     }
 
@@ -82,10 +85,10 @@ async function request<T>(
     if ((err as ApiError)?.status !== undefined) {
       throw err;
     }
-    // Network failure (backend down or unreachable)
+    // Network failure (backend down, unreachable, or still waking up after idle)
     throw {
       status: 0,
-      message: (err as Error)?.message || 'Network request failed',
+      message: "Can't reach the data server. If the site was idle it may be waking up (about 30 s), so try again shortly.",
     } as ApiError;
   }
 }
@@ -202,7 +205,7 @@ function buildMockAnomaly(month: string): Anomaly {
   };
 }
 
-const LIVE_TIMEOUT_MS = 20_000;
+const LIVE_TIMEOUT_MS = 15_000;
 const EMPTY_LIVE: LiveHotspotsCollection = { type: 'FeatureCollection', features: [] };
 
 export interface LiveResponse extends ApiResponse<LiveHotspotsCollection> {

@@ -41,6 +41,9 @@ export const BurnCalendar: React.FC = () => {
     return { calendarMap: map, maxCount: max };
   }, [data]);
 
+  // Rows exist but nothing ever burned → an all-dark grid; show a message instead
+  const allZero = !!data && data.length > 0 && maxCount === 0;
+
   const legendSteps = getRampLegendSteps(colorScale);
 
   return (
@@ -103,21 +106,31 @@ export const BurnCalendar: React.FC = () => {
         {error && !loading && (
           <ErrorState
             height="260px"
-            message="Failed to load calendar data"
+            message="Couldn't load the burning calendar"
             subtext={error.message}
             onRetry={refetch}
           />
         )}
 
+        {/* No rows = no grid cells in the area (archive covers only the 5 study regions) */}
         {!loading && !error && (!data || data.length === 0) && (
           <EmptyState
             height="260px"
-            message="No fire data for this area yet"
-            subtext="No active fire records were returned for this spatial query."
+            message="No fires in this area"
+            subtext="Nothing burned here in the 2001–now record, or the area is outside the five regions with archive data (Punjab–Haryana, Brazil, Greece, NSW Australia, California). Try a preset or a bigger area."
           />
         )}
 
-        {!loading && !error && data && data.length > 0 && (
+        {/* Rows but every month is zero (e.g. open sea inside a region) */}
+        {!loading && !error && allZero && (
+          <EmptyState
+            height="260px"
+            message="No fires in this area"
+            subtext="Every month from 2001 to now is zero here. Try a bigger area or a preset."
+          />
+        )}
+
+        {!loading && !error && data && data.length > 0 && !allZero && (
           <div style={{ overflowX: 'auto', paddingBottom: '4px' }}>
             <div
               style={{ minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '3px' }}

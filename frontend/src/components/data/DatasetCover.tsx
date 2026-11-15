@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelection } from '../../hooks/useSelection';
 import { useValidation } from '../../hooks/useValidation';
 import { getExportHotspotsCsvUrl, getExportAnalyticsCsvUrl, isOfflineMockMode } from '../../api/api';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 import mockValidation from '../../api/mock/validation.json';
+import { areaDeg2, MAX_AREA_DEG2 } from '../../lib/area';
 
 interface DatasetCoverProps {
   title: string;
@@ -17,6 +18,12 @@ interface DatasetCoverProps {
   downloadLabel: string;
   isMock: boolean;
   isDisabled?: boolean;
+  /** Short badge/button text when disabled (default "Available soon") */
+  disabledLabel?: string;
+  /** One line under the card when disabled (default "Endpoint not published yet") */
+  disabledNote?: string;
+  /** Shown for a while after clicking download, e.g. while the server builds a big CSV */
+  preparingNote?: string;
 }
 
 export const DatasetCoverCard: React.FC<DatasetCoverProps> = ({
@@ -31,8 +38,14 @@ export const DatasetCoverCard: React.FC<DatasetCoverProps> = ({
   downloadLabel,
   isMock,
   isDisabled = false,
+  disabledLabel = 'Available soon',
+  disabledNote = 'Endpoint not published yet',
+  preparingNote,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [preparing, setPreparing] = useState<boolean>(false);
+  const prepTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(prepTimer.current), []);
 
   const handleClick = () => {
     if (isDisabled) return;
@@ -97,7 +110,7 @@ export const DatasetCoverCard: React.FC<DatasetCoverProps> = ({
                   color: 'var(--color-gold)',
                 }}
               >
-                Available soon
+                {disabledLabel}
               </span>
             ) : (
               <span
@@ -193,7 +206,9 @@ export const DatasetCoverCard: React.FC<DatasetCoverProps> = ({
       >
         <span style={{ fontSize: '0.75rem', color: isDisabled ? 'var(--color-muted)' : 'var(--color-gold)' }}>
           {isDisabled
-            ? 'Endpoint not published yet'
+            ? disabledNote
+            : preparing && preparingNote
+            ? preparingNote
             : isExpanded
             ? 'Click to collapse details'
             : 'Click to inspect endpoint'}
@@ -213,13 +228,20 @@ export const DatasetCoverCard: React.FC<DatasetCoverProps> = ({
               fontFamily: 'var(--font-sans)',
             }}
           >
-            Available soon
+            {disabledLabel}
           </span>
         ) : (
           <a
             href={downloadUrl}
             download={filename}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!preparingNote) return;
+              // The browser shows nothing until the server has built the whole file
+              setPreparing(true);
+              window.clearTimeout(prepTimer.current);
+              prepTimer.current = window.setTimeout(() => setPreparing(false), 25000);
+            }}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -261,6 +283,11 @@ export const DatasetCoverSection: React.FC = () => {
 
   const isMockMode = isOfflineMockMode();
   const isVal404 = validationError?.status === 404;
+  // status 0 = unreachable / waking up, 5xx = server error; a dead link would leave the site
+  const backendDown = !isMockMode && !!validationError && (validationError.status === 0 || (validationError.status ?? 0) >= 500);
+  // Drawn areas are already capped at draw time; this also covers future presets/bboxes
+  const tooBigForHotspots = !isMockMode && areaDeg2(area) > MAX_AREA_DEG2;
+  const downNote = 'Data server unreachable. Reload the page in a moment to retry.';
 
   return (
     <div id="datasets" className="section" style={{ borderBottom: 'none', padding: 'var(--space-3xl) 0' }}>
@@ -284,6 +311,14 @@ export const DatasetCoverSection: React.FC = () => {
           downloadUrl={hotspotsExport.url}
           downloadLabel={hotspotsExport.isMock ? 'Sample CSV' : 'Download CSV'}
           isMock={hotspotsExport.isMock}
+          isDisabled={backendDown || tooBigForHotspots}
+          disabledLabel={backendDown ? 'Offline' : 'Area too large'}
+          disabledNote={
+            backendDown
+              ? downNote
+              : 'Cell-level CSV is limited to areas up to about twice California. Draw a smaller area, or use the monthly CSV.'
+          }
+          preparingNote="Preparing your CSV… this can take up to ~20 s before the download starts."
           description="Cell-level monthly active fire counts cross-calibrated between MODIS and VIIRS with empirical uncertainty intervals."
           fields={['cell_id', 'lat', 'lon', 'month', 'harmonized_count', 'source', 'uncertainty']}
           sampleCurl={`curl "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/export.csv?start=${startMonth}&end=${endMonth}"`}
@@ -297,6 +332,10 @@ export const DatasetCoverSection: React.FC = () => {
           downloadUrl={analyticsExport.url}
           downloadLabel={analyticsExport.isMock ? 'Sample CSV' : 'Download CSV'}
           isMock={analyticsExport.isMock}
+          isDisabled={backendDown}
+          disabledLabel="Offline"
+          disabledNote={downNote}
+          preparingNote="Preparing your CSV…"
           description="Integrated monthly burning series for your area, with each month's historical normal: median, p10–p90 band, z-score and percentile."
           fields={['count', 'source', 'median', 'p10-p90', 'z-score', 'percentile']}
           sampleCurl={`curl "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/export_analytics.csv"`}
@@ -315,7 +354,9 @@ export const DatasetCoverSection: React.FC = () => {
           }
           downloadLabel={isMockMode ? 'Download Sample JSON' : 'Download JSON'}
           isMock={valIsMock}
-          isDisabled={!isMockMode && isVal404}
+          isDisabled={!isMockMode && (isVal404 || backendDown)}
+          disabledLabel={backendDown ? 'Offline' : 'Available soon'}
+          disabledNote={backendDown ? downNote : 'Endpoint not published yet'}
           description="Validation benchmarking on the 2020 cross-satellite holdout year including Mean Absolute Percentage Error (MAPE) proof."
           fields={['holdout_year', 'MAE', 'MAPE', 'before/after series']}
           sampleCurl={`curl "${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/validation"`}

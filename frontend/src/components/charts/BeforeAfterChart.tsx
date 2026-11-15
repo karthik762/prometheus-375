@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { useValidation } from '../../hooks/useValidation';
 import { formatCount, formatMonthShort } from '../../lib/format';
-import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
+import { LoadingState, ComingSoonState, ErrorState, EmptyState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -133,10 +133,18 @@ export const BeforeAfterChart: React.FC = () => {
           ) : (
             <ErrorState
               height="300px"
-              message="Unable to load validation series"
+              message="Couldn't load the before/after chart"
               subtext={error.message}
             />
           )
+        )}
+
+        {!loading && !error && chartData.length === 0 && (
+          <EmptyState
+            height="300px"
+            message="No fires in this area to compare"
+            subtext="The raw vs harmonized series is empty here. Pick a preset or a bigger area to see the 2012 sensor jump disappear."
+          />
         )}
 
         {!loading && !error && chartData.length > 0 && (

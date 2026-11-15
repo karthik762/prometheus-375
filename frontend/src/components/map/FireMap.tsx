@@ -7,6 +7,8 @@ import { useLive } from '../../hooks/useLive';
 import { RegionPresets } from './RegionPresets';
 import { LiveHotspotsLayer } from './LiveHotspotsLayer';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
+import { LoadingState } from '../ui/States';
+import { boundsDeg2, geometryBounds, MAX_AREA_DEG2, CALIFORNIA_DEG2 } from '../../lib/area';
 import type { Polygon, MultiPolygon } from 'geojson';
 import type { AreaSelection } from '../../api/types';
 
@@ -106,6 +108,8 @@ export const FireMap: React.FC = () => {
   const [showLive, setShowLive] = useState<boolean>(true);
   // Flips true once the 'load' handler has added the AOI + live sources/layers
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+  // Why the last drawn shape was rejected (too large), shown under the draw button
+  const [drawNote, setDrawNote] = useState<string | null>(null);
 
   const isLive404 = liveError?.status === 404;
 
@@ -293,12 +297,21 @@ export const FireMap: React.FC = () => {
               latestFeature.geometry.type === 'Polygon' ||
               (latestFeature.geometry.type as string) === 'MultiPolygon'
             ) {
-              setPolygonRef.current(
-                latestFeature.geometry as Polygon | MultiPolygon,
-                'Custom Drawn Boundary'
-              );
+              const geom = latestFeature.geometry as Polygon | MultiPolygon;
+              const size = boundsDeg2(geometryBounds(geom));
               setIsDrawing(false);
               td.setMode('render');
+              if (size > MAX_AREA_DEG2) {
+                // Too big to query safely (a ~6,600 deg² area took the backend down): drop it
+                td.clear();
+                setDrawNote(
+                  `That area is about ${Math.round(size / CALIFORNIA_DEG2)}× the size of California, ` +
+                    `too large to query. Draw an area up to about twice California's size.`
+                );
+                return;
+              }
+              setDrawNote(null);
+              setPolygonRef.current(geom, 'Custom Drawn Boundary');
             }
           }
         });
@@ -390,6 +403,7 @@ export const FireMap: React.FC = () => {
     } else {
       drawRef.current.setMode('polygon');
       setIsDrawing(true);
+      setDrawNote(null);
     }
   }, [isDrawing]);
 
@@ -497,6 +511,23 @@ export const FireMap: React.FC = () => {
               {isDrawing ? 'Click points on map to close' : 'Draw your own area'}
             </button>
 
+            {drawNote && (
+              <div
+                role="alert"
+                style={{
+                  fontSize: '0.75rem',
+                  lineHeight: 1.4,
+                  color: 'var(--color-gold)',
+                  border: '1px solid rgba(184, 156, 107, 0.4)',
+                  backgroundColor: 'rgba(184, 156, 107, 0.08)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '8px 10px',
+                }}
+              >
+                {drawNote}
+              </div>
+            )}
+
             <LiveHotspotsLayer live={live} showLive={showLive} onToggleLive={setShowLive} />
           </div>
         </div>
@@ -519,6 +550,13 @@ export const FireMap: React.FC = () => {
               style={{ width: '100%', height: '100%', minHeight: '480px' }}
               aria-label="Geographic Fire Activity Map"
             />
+
+            {/* Until the style + first tiles are in, the canvas is an empty dark box */}
+            {!mapLoaded && (
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                <LoadingState height="100%" message="Loading map…" subtext="Fetching basemap tiles" />
+              </div>
+            )}
 
             {/* Bottom Info Pill */}
             <div
