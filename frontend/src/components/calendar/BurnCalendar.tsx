@@ -5,6 +5,8 @@ import { getHeatmapColor, getRampLegendSteps } from '../../lib/colorRamp';
 import { areaErrorCopy, formatCount, formatMonthName } from '../../lib/format';
 import { LoadingState, EmptyState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
+import { DownloadPngButton } from '../ui/DownloadPngButton';
+import { calendarToCanvas, downloadCanvas, pngFilename } from '../../lib/exportPng';
 import type { CalendarRow } from '../../api/types';
 
 const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
@@ -17,7 +19,7 @@ const CELL_HEIGHT = 14;
 
 export const BurnCalendar: React.FC = () => {
   const { data, isMock, loading, error, refetch } = useCalendar();
-  const { area, selectedMonth, setSelectedMonth, colorScale } = useSelection();
+  const { area, selectedMonth, setSelectedMonth, colorScale, startMonth, endMonth } = useSelection();
 
   // Hover state for tooltip
   const [hoveredCell, setHoveredCell] = useState<{
@@ -45,6 +47,22 @@ export const BurnCalendar: React.FC = () => {
   const allZero = !!data && data.length > 0 && maxCount === 0;
 
   const legendSteps = getRampLegendSteps(colorScale);
+  const areaLabel = area.name ? area.name.replace(/\s*\(.*?\)\s*/g, '') : 'Selected Area';
+  const canExport = !loading && !error && !!data && data.length > 0 && !allZero;
+
+  const exportPng = async () => {
+    if (!data) return;
+    const canvas = await calendarToCanvas({
+      data,
+      colorScale,
+      areaName: area.name || areaLabel,
+      startMonth,
+      endMonth,
+      firstYear: FIRST_YEAR,
+      currentMonth: CURRENT_MONTH,
+    });
+    await downloadCanvas(canvas, pngFilename('calendar', area.presetId || areaLabel, startMonth, endMonth));
+  };
 
   return (
     <div
@@ -77,12 +95,17 @@ export const BurnCalendar: React.FC = () => {
                 display: 'block',
               }}
             >
-              {area.name ? area.name.replace(/\s*\(.*?\)\s*/g, '') : 'Selected Area'} • monthly fire counts
+              {areaLabel} • monthly fire counts
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             {isMock && <SampleDataBadge />}
+            <DownloadPngButton
+              onExport={exportPng}
+              disabled={!canExport}
+              ariaLabel={`Download burning activity calendar for ${areaLabel} as PNG`}
+            />
             {selectedMonth && (
               <span
                 style={{
