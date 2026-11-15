@@ -5,6 +5,7 @@ import { CountUp } from './CountUp';
 import { areaErrorCopy, formatCount, formatMonthShort } from '../../lib/format';
 import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
+import { OUTSIDE_COVERAGE_TITLE, OUTSIDE_COVERAGE_TEXT } from '../../lib/coverage';
 
 export const NowVsNormalCard: React.FC = () => {
   const { data: anomaly, isMock, loading, error, refetch } = useAnomaly();
@@ -21,10 +22,12 @@ export const NowVsNormalCard: React.FC = () => {
   // value and z hits the backend's ±10 cap (e.g. Jul 2002 → z −10, 0th pct). Don't show those.
   // No fires this month nor in any earlier year (sea, tiny area, outside the 5 regions):
   // backend returns all zeros and p10 = p90 = 0, which must not read as "too few years".
-  const noFires = !!anomaly && anomaly.current === 0 && anomaly.median === 0 && anomaly.p90 === 0;
+  // Area has no grid cells at all: backend sends no_data with every number null
+  const outsideCoverage = !!anomaly?.no_data;
+  const noFires = !outsideCoverage && !!anomaly && anomaly.current === 0 && anomaly.median === 0 && anomaly.p90 === 0;
   // z_score is null when the backend has too little history to compute one.
   const thinBaseline =
-    !noFires && !!anomaly && (anomaly.p10 === anomaly.p90 || anomaly.z_score === null || Math.abs(anomaly.z_score) >= 10);
+    !noFires && !outsideCoverage && !!anomaly && (anomaly.p10 === anomaly.p90 || anomaly.z_score === null || Math.abs(anomaly.z_score) >= 10);
 
   return (
     <div
@@ -83,7 +86,25 @@ export const NowVsNormalCard: React.FC = () => {
           )
         )}
 
-        {!loading && !error && anomaly && (
+        {!loading && !error && outsideCoverage && (
+          <div style={{ minHeight: '240px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: '1.5rem',
+                color: 'var(--color-text-primary)',
+                marginBottom: 'var(--space-sm)',
+              }}
+            >
+              {OUTSIDE_COVERAGE_TITLE}
+            </div>
+            <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+              {OUTSIDE_COVERAGE_TEXT}. Pick a preset or draw inside one of the outlined regions on the map.
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && anomaly && !outsideCoverage && (
           <div>
             {/* Giant Stat Display */}
             <div

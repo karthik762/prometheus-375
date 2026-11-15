@@ -28,6 +28,11 @@ export interface Anomaly {
   /** Season not started yet: already at least this many days later than normal (DECISIONS 15:35) */
   onset_shift_min_days?: number | null;
   is_month_to_date?: boolean;
+  /**
+   * Area contains zero harmonized grid cells (outside the 5 covered regions).
+   * When true the backend sends every numeric field as null: check this first.
+   */
+  no_data?: boolean;
 }
 
 export interface LiveHotspotProperties {
@@ -77,6 +82,8 @@ export interface ApiError {
 export interface ApiResponse<T> {
   data: T;
   isMock: boolean;
+  /** /calendar only: backend X-No-Data header (area outside data coverage) */
+  noData?: boolean;
 }
 
 export type AreaType = 'preset' | 'bbox' | 'polygon';

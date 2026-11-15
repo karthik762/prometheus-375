@@ -15,14 +15,16 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import time
+
 import duckdb
 from fastapi import HTTPException
 import numpy as np
 
 try:
-    from backend.spatial import build_spatial_filter, init_duckdb_spatial, parse_bbox, parse_polygon
+    from backend.spatial import build_spatial_filter, init_duckdb_spatial, parse_bbox, parse_polygon, timing_logger
 except ImportError:
-    from spatial import build_spatial_filter, init_duckdb_spatial, parse_bbox, parse_polygon
+    from spatial import build_spatial_filter, init_duckdb_spatial, parse_bbox, parse_polygon, timing_logger
 
 # Punjab / Haryana preset bounding box per DECISIONS.md (pb_hr)
 PB_HR_BBOX = (73.5, 27.5, 77.5, 32.5)
@@ -268,12 +270,9 @@ def read_precomputed_anomaly(
             "z_score": z_score_val,
             "percentile": round(float(percentile), 1),
             "onset_shift_days": onset_shift_days,
-<<<<<<< HEAD
             "month_to_date": bool(month_to_date),
             "mtd_days": int(mtd_days) if mtd_days is not None else None,
-=======
             "onset_shift_min_days": onset_shift_min_days,
->>>>>>> origin/main
         }
     except Exception:
         return None
@@ -321,10 +320,13 @@ def compute_on_the_fly_anomaly(
     if not effective_bbox and not effective_polygon:
         effective_bbox = f"{PB_HR_BBOX[0]},{PB_HR_BBOX[1]},{PB_HR_BBOX[2]},{PB_HR_BBOX[3]}"
 
+    t0 = time.perf_counter()
     spatial_conditions, spatial_params, requires_spatial = build_spatial_filter(
         bbox=effective_bbox,
         polygon=effective_polygon,
+        parquet_path=parquet_path,
     )
+    t_filter = time.perf_counter()
 
     where_clause = f"WHERE {' AND '.join(spatial_conditions)}" if spatial_conditions else ""
     query = f"""
@@ -347,6 +349,8 @@ def compute_on_the_fly_anomaly(
         raise HTTPException(status_code=500, detail=f"DuckDB spatial aggregation failed: {e}")
     finally:
         con.close()
+
+    t_agg = time.perf_counter()
 
     month_counts: Dict[str, float] = {}
     if not df.empty:
@@ -392,6 +396,11 @@ def compute_on_the_fly_anomaly(
         np.mean(prior_arr < current) * 100.0 + np.mean(prior_arr == current) * 50.0
     )
 
+    timing_logger.info(
+        "anomaly on-the-fly: spatial filter %.0f ms | aggregation %.0f ms | baseline %.1f ms",
+        (t_filter - t0) * 1000, (t_agg - t_filter) * 1000, (time.perf_counter() - t_agg) * 1000,
+    )
+
     # Join onset_shift_days if this query matches a known preset region
     onset_shift_days: Optional[float] = None
     onset_shift_min_days: Optional[float] = None
@@ -411,12 +420,9 @@ def compute_on_the_fly_anomaly(
         "z_score": z_score_val,
         "percentile": round(percentile, 1),
         "onset_shift_days": onset_shift_days,
-<<<<<<< HEAD
         "month_to_date": False,
         "mtd_days": None,
-=======
         "onset_shift_min_days": onset_shift_min_days,
->>>>>>> origin/main
     }
 
 

@@ -8,6 +8,7 @@ import { SampleDataBadge } from '../ui/SampleDataBadge';
 import { DownloadPngButton } from '../ui/DownloadPngButton';
 import { calendarToCanvas, downloadCanvas, pngFilename } from '../../lib/exportPng';
 import type { CalendarRow } from '../../api/types';
+import { OUTSIDE_COVERAGE_TITLE, OUTSIDE_COVERAGE_TEXT } from '../../lib/coverage';
 
 const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -18,7 +19,7 @@ const GRID_COLUMNS = '36px repeat(12, minmax(0, 1fr))';
 const CELL_HEIGHT = 14;
 
 export const BurnCalendar: React.FC = () => {
-  const { data, isMock, loading, error, refetch } = useCalendar();
+  const { data, isMock, noData, loading, error, refetch } = useCalendar();
   const { area, selectedMonth, setSelectedMonth, colorScale, startMonth, endMonth } = useSelection();
 
   // Hover state for tooltip
@@ -171,8 +172,17 @@ export const BurnCalendar: React.FC = () => {
           />
         )}
 
-        {/* No rows = no grid cells in the area (archive covers only the 5 study regions) */}
-        {!loading && !error && (!data || data.length === 0) && (
+        {/* Backend X-No-Data: zero grid cells in the area (outside the 5 covered regions) */}
+        {!loading && !error && noData && (
+          <EmptyState
+            height="260px"
+            message={OUTSIDE_COVERAGE_TITLE}
+            subtext={`${OUTSIDE_COVERAGE_TEXT}. The faint outlines on the map show where.`}
+          />
+        )}
+
+        {/* No rows without the flag (older backend): keep the generic copy */}
+        {!loading && !error && !noData && (!data || data.length === 0) && (
           <EmptyState
             height="260px"
             message="No fires in this area"

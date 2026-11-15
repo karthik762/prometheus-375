@@ -8,6 +8,8 @@ export const QUERY_DEBOUNCE_MS = 300;
 export interface QueryState<T> {
   data: T | null;
   isMock: boolean;
+  /** Backend says the area is outside data coverage (calendar: X-No-Data header) */
+  noData: boolean;
   loading: boolean;
   error: ApiError | null;
   refetch: () => void;
@@ -56,8 +58,8 @@ export function useApiQuery<T>({
   const [state, setState] = useState<Omit<QueryState<T>, 'refetch'>>(() => {
     const hit = peek();
     return hit
-      ? { data: hit.data, isMock: hit.isMock, loading: false, error: null }
-      : { data: null, isMock: false, loading: true, error: null };
+      ? { data: hit.data, isMock: hit.isMock, noData: !!hit.noData, loading: false, error: null }
+      : { data: null, isMock: false, noData: false, loading: true, error: null };
   });
 
   const prevGroupRef = useRef<string | null>(null);
@@ -72,7 +74,7 @@ export function useApiQuery<T>({
 
     const hit = peekRef.current();
     if (hit) {
-      setState({ data: hit.data, isMock: hit.isMock, loading: false, error: null });
+      setState({ data: hit.data, isMock: hit.isMock, noData: !!hit.noData, loading: false, error: null });
       return;
     }
 
@@ -85,7 +87,7 @@ export function useApiQuery<T>({
       fetcherRef.current(controller.signal)
         .then((res) => {
           if (controller.signal.aborted) return;
-          setState({ data: res.data, isMock: res.isMock, loading: false, error: res.error ?? null });
+          setState({ data: res.data, isMock: res.isMock, noData: !!res.noData, loading: false, error: res.error ?? null });
         })
         .catch((err: unknown) => {
           if (controller.signal.aborted || (err as Error)?.name === 'AbortError') return;
@@ -93,7 +95,7 @@ export function useApiQuery<T>({
             (err as ApiError)?.message !== undefined
               ? (err as ApiError)
               : { status: 0, message: 'Request failed' };
-          setState({ data: null, isMock: false, loading: false, error: apiErr });
+          setState({ data: null, isMock: false, noData: false, loading: false, error: apiErr });
         });
     }, delay);
 

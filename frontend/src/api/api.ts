@@ -36,7 +36,7 @@ const CACHE_MAX = 300;
  * so going back to a month/area already seen is instant. Only successes are cached;
  * a failed request is always retried. Map insertion order = LRU order.
  */
-const responseCache = new Map<string, { data: unknown; at: number }>();
+const responseCache = new Map<string, { data: unknown; at: number; noData?: boolean }>();
 
 function buildUrl(endpoint: string, searchParams: Record<string, string | number | undefined>): string {
   const url = new URL(`${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`);
@@ -48,7 +48,7 @@ function buildUrl(endpoint: string, searchParams: Record<string, string | number
   return url.toString();
 }
 
-function cacheGet<T>(url: string): T | undefined {
+function cacheGet<T>(url: string): { data: T; noData?: boolean } | undefined {
   const hit = responseCache.get(url);
   if (!hit) return undefined;
   if (Date.now() - hit.at > CACHE_TTL_MS) {
@@ -57,11 +57,11 @@ function cacheGet<T>(url: string): T | undefined {
   }
   responseCache.delete(url); // refresh LRU position
   responseCache.set(url, hit);
-  return hit.data as T;
+  return { data: hit.data as T, noData: hit.noData };
 }
 
-function cacheSet(url: string, data: unknown): void {
-  responseCache.set(url, { data, at: Date.now() });
+function cacheSet(url: string, data: unknown, noData?: boolean): void {
+  responseCache.set(url, { data, at: Date.now(), noData });
   while (responseCache.size > CACHE_MAX) {
     responseCache.delete(responseCache.keys().next().value as string);
   }
@@ -76,8 +76,8 @@ export function peekCached<T>(
   searchParams: Record<string, string | number | undefined>
 ): ApiResponse<T> | undefined {
   if (!API_BASE) return undefined;
-  const data = cacheGet<T>(buildUrl(endpoint, searchParams));
-  return data === undefined ? undefined : { data, isMock: false };
+  const hit = cacheGet<T>(buildUrl(endpoint, searchParams));
+  return hit === undefined ? undefined : { data: hit.data, isMock: false, noData: hit.noData };
 }
 
 function logFailure(url: string, status: number | string, detail?: unknown) {
@@ -106,7 +106,7 @@ async function request<T>(
 
   const url = buildUrl(endpoint, searchParams);
   const cached = cacheGet<T>(url);
-  if (cached !== undefined) return { data: cached, isMock: false };
+  if (cached !== undefined) return { data: cached.data, isMock: false, noData: cached.noData };
 
   // Own controller so a timeout can be told apart from the caller aborting
   const controller = new AbortController();
@@ -146,8 +146,10 @@ async function request<T>(
     }
 
     const json = (await res.json()) as T;
-    cacheSet(url, json);
-    return { data: json, isMock: false };
+    // Additive flag for /calendar: the body stays a plain list, so it rides in a header
+    const noData = res.headers.get('X-No-Data') === 'true' ? true : undefined;
+    cacheSet(url, json, noData);
+    return { data: json, isMock: false, noData };
   } catch (err: unknown) {
     if (signal?.aborted) {
       // Superseded by a newer request: always surface as AbortError, never as a failure

@@ -11,6 +11,7 @@ import { LoadingState } from '../ui/States';
 import { boundsDeg2, geometryBounds, MAX_AREA_DEG2, CALIFORNIA_DEG2 } from '../../lib/area';
 import type { Polygon, MultiPolygon } from 'geojson';
 import type { AreaSelection } from '../../api/types';
+import { COVERAGE_REGIONS, coverageGeoJSON } from '../../lib/coverage';
 
 // Esri World Dark Gray Canvas — no API key needed. (Carto's dark_all raster
 // tiles now return an "API KEY REQUIRED" placeholder for every request.)
@@ -174,6 +175,31 @@ export const FireMap: React.FC = () => {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
     map.on('load', () => {
+      // 0. Faint outline of the 5 regions with archive data, under everything else
+      map.addSource('coverage-source', { type: 'geojson', data: coverageGeoJSON() });
+      map.addLayer({
+        id: 'coverage-outline',
+        type: 'line',
+        source: 'coverage-source',
+        paint: {
+          'line-color': '#9aa3ad',
+          'line-width': 1,
+          'line-opacity': 0.35,
+          'line-dasharray': [1, 2],
+        },
+      });
+      // Style has no glyphs, so labels are small HTML markers (top-left corner, inside)
+      COVERAGE_REGIONS.forEach(({ name, bbox: [w, , , n] }) => {
+        const el = document.createElement('div');
+        el.textContent = 'Data coverage';
+        el.title = `Data coverage: ${name}`;
+        el.setAttribute('aria-hidden', 'true');
+        el.style.cssText =
+          'font: 500 10px/1 var(--font-mono, monospace); letter-spacing: .04em; color: rgba(190,198,206,.55);' +
+          'padding: 3px 4px; pointer-events: none; white-space: nowrap;';
+        new maplibregl.Marker({ element: el, anchor: 'top-left' }).setLngLat([w, n]).addTo(map);
+      });
+
       // 1. Source and layers for Area of Interest outline
       map.addSource('aoi-source', {
         type: 'geojson',

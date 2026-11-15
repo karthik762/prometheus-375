@@ -1,5 +1,8 @@
+import copy
 import logging
 import os
+import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import duckdb
@@ -12,15 +15,15 @@ from pydantic import BaseModel
 logger = logging.getLogger("prometheus375")
 
 try:
-    from backend.spatial import build_spatial_filter, init_duckdb_spatial
+    from backend.spatial import area_has_data, build_spatial_filter, init_duckdb_spatial, timing_logger
     from backend.firms_live import get_live_hotspots_geojson
-    from backend.anomaly import get_anomaly_metrics
+    from backend.anomaly import get_anomaly_metrics, validate_month_format
     from backend.exports import export_csv, export_analytics_csv
     from backend.validation import get_validation_data
 except ImportError:
-    from spatial import build_spatial_filter, init_duckdb_spatial
+    from spatial import area_has_data, build_spatial_filter, init_duckdb_spatial, timing_logger
     from firms_live import get_live_hotspots_geojson
-    from anomaly import get_anomaly_metrics
+    from anomaly import get_anomaly_metrics, validate_month_format
     from exports import export_csv, export_analytics_csv
     from validation import get_validation_data
 
@@ -39,6 +42,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Lets the browser read the /calendar outside-coverage flag
+    expose_headers=["X-No-Data"],
 )
 
 
@@ -110,20 +115,20 @@ class CalendarEntry(BaseModel):
 
 
 class AnomalyResponse(BaseModel):
-    current: float
-    median: float
-    p10: float
-    p90: float
+    # Numeric fields are null only when no_data is true (area outside data coverage)
+    current: Optional[float]
+    median: Optional[float]
+    p10: Optional[float]
+    p90: Optional[float]
     z_score: Optional[float]
-    percentile: float
+    percentile: Optional[float]
     onset_shift_days: Optional[float] = None
-<<<<<<< HEAD
     month_to_date: Optional[bool] = None
     mtd_days: Optional[int] = None
-=======
     # Onset not reached yet: lower bound on the delay (DECISIONS 2026-11-14 15:35)
     onset_shift_min_days: Optional[float] = None
->>>>>>> origin/main
+    # True when the bbox/polygon contains zero harmonized grid cells (outside coverage)
+    no_data: Optional[bool] = None
 
 
 class BeforeAfterEntry(BaseModel):
@@ -189,23 +194,24 @@ def presets():
     return PRESETS
 
 
-@app.get("/calendar", response_model=List[CalendarEntry])
-def calendar(
-    start: Optional[str] = Query(None, description="Start month in YYYY-MM format"),
-    end: Optional[str] = Query(None, description="End month in YYYY-MM format"),
-    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
-    polygon: Optional[str] = Query(None, description="GeoJSON polygon string (Polygon, MultiPolygon, Feature, FeatureCollection)"),
-):
-    """
-    Return burning-activity calendar aggregated monthly for the specified area and date range.
-    Supports both bbox and GeoJSON polygon filtering using DuckDB spatial centroids.
-    """
-    parquet_path = get_parquet_path()
-    if not os.path.exists(parquet_path):
-        raise HTTPException(
-            status_code=503,
-            detail=f"Harmonized parquet data not found at '{parquet_path}'",
-        )
+def _parquet_version(parquet_path: str) -> float:
+    return os.path.getmtime(parquet_path)
+
+
+@lru_cache(maxsize=128)
+def _calendar_cached(
+    start: Optional[str],
+    end: Optional[str],
+    bbox: Optional[str],
+    polygon: Optional[str],
+    parquet_path: str,
+    version: float,
+) -> tuple:
+    """(no_data, rows) for one (area, dates, data version). Errors are not cached."""
+    t0 = time.perf_counter()
+    if not area_has_data(parquet_path, bbox=bbox, polygon=polygon):
+        timing_logger.info("/calendar no_data in %.0f ms", (time.perf_counter() - t0) * 1000)
+        return True, []
 
     conditions: List[str] = []
     params: List = [parquet_path]
@@ -221,10 +227,12 @@ def calendar(
     spatial_conditions, spatial_params, requires_spatial = build_spatial_filter(
         bbox=bbox,
         polygon=polygon,
+        parquet_path=parquet_path,
     )
     if spatial_conditions:
         conditions.extend(spatial_conditions)
         params.extend(spatial_params)
+    t_filter = time.perf_counter()
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
@@ -252,12 +260,41 @@ def calendar(
         raise HTTPException(status_code=500, detail=f"DuckDB query execution failed: {e}")
     finally:
         con.close()
+    timing_logger.info(
+        "/calendar: coverage+spatial filter %.0f ms | aggregation %.0f ms | %d rows",
+        (t_filter - t0) * 1000, (time.perf_counter() - t_filter) * 1000, len(df),
+    )
 
-    if df.empty:
-        return []
+    return False, ([] if df.empty else df.to_dict(orient="records"))
 
-    records = df.to_dict(orient="records")
-    return records
+
+@app.get("/calendar", response_model=List[CalendarEntry])
+def calendar(
+    response: Response,
+    start: Optional[str] = Query(None, description="Start month in YYYY-MM format"),
+    end: Optional[str] = Query(None, description="End month in YYYY-MM format"),
+    bbox: Optional[str] = Query(None, description="Bounding box as minLon,minLat,maxLon,maxLat"),
+    polygon: Optional[str] = Query(None, description="GeoJSON polygon string (Polygon, MultiPolygon, Feature, FeatureCollection)"),
+):
+    """
+    Return burning-activity calendar aggregated monthly for the specified area and date range.
+    Supports both bbox and GeoJSON polygon filtering on 0.25° cell centroids.
+    If the area contains zero harmonized cells (outside data coverage) the body is []
+    and the response carries the header X-No-Data: true (additive; list shape unchanged).
+    Results are LRU-cached (128) per (area, dates, parquet version).
+    """
+    parquet_path = get_parquet_path()
+    if not os.path.exists(parquet_path):
+        raise HTTPException(
+            status_code=503,
+            detail=f"Harmonized parquet data not found at '{parquet_path}'",
+        )
+
+    t0 = time.perf_counter()
+    no_data, rows = _calendar_cached(start, end, bbox, polygon, parquet_path, _parquet_version(parquet_path))
+    timing_logger.info("/calendar total %.0f ms (polygon=%s)", (time.perf_counter() - t0) * 1000, bool(polygon))
+    response.headers["X-No-Data"] = "true" if no_data else "false"
+    return copy.deepcopy(rows)
 
 
 @app.get("/live")
@@ -284,12 +321,45 @@ def anomaly(
     and season onset shift for the specified month and area.
     """
     parquet_path = get_parquet_path()
-    return get_anomaly_metrics(
-        month=month,
-        bbox=bbox,
-        polygon=polygon,
-        parquet_path=parquet_path,
-    )
+    t0 = time.perf_counter()
+    if os.path.exists(parquet_path):
+        result = _anomaly_cached(month, bbox, polygon, parquet_path, _parquet_version(parquet_path))
+    else:
+        result = get_anomaly_metrics(month=month, bbox=bbox, polygon=polygon, parquet_path=parquet_path)
+    timing_logger.info("/anomaly total %.0f ms (polygon=%s)", (time.perf_counter() - t0) * 1000, bool(polygon))
+    return copy.deepcopy(result)
+
+
+_NO_DATA_ANOMALY: Dict[str, Any] = {
+    "current": None,
+    "median": None,
+    "p10": None,
+    "p90": None,
+    "z_score": None,
+    "percentile": None,
+    "onset_shift_days": None,
+    "onset_shift_min_days": None,
+    "month_to_date": None,
+    "mtd_days": None,
+    "no_data": True,
+}
+
+
+@lru_cache(maxsize=128)
+def _anomaly_cached(
+    month: str,
+    bbox: Optional[str],
+    polygon: Optional[str],
+    parquet_path: str,
+    version: float,
+) -> Dict[str, Any]:
+    """Anomaly per (month, area, data version). Errors (HTTPException) are not cached."""
+    # Validate inputs first so bad requests still get their 400s
+    validate_month_format(month)
+    if not area_has_data(parquet_path, bbox=bbox, polygon=polygon):
+        return dict(_NO_DATA_ANOMALY)
+    result = get_anomaly_metrics(month=month, bbox=bbox, polygon=polygon, parquet_path=parquet_path)
+    return {**result, "no_data": False}
 
 
 @app.get("/export.csv")
