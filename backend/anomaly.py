@@ -283,6 +283,92 @@ def read_precomputed_anomaly(
         con.close()
 
 
+SENSOR_GAP_REASON = "sensor gap"
+
+
+def sensor_gap_anomaly() -> Dict[str, Any]:
+    """Partial month with no fair (day-matched) baseline: no numbers, no percentile."""
+    return {
+        "current": None,
+        "median": None,
+        "p10": None,
+        "p90": None,
+        "z_score": None,
+        "percentile": None,
+        "onset_shift_days": None,
+        "onset_shift_min_days": None,
+        "month_to_date": None,
+        "mtd_days": None,
+        "no_data": True,
+        "reason": SENSOR_GAP_REASON,
+    }
+
+
+def read_preset_mtd_anomaly(month: str, preset_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Day-matched month-to-date row for a non-India preset box, from the
+    anomaly_preset_<preset_id>.parquet sidecar (pipeline/07_anomaly.py --preset).
+    Returns None unless `month` is that file's month_to_date row.
+    """
+    preset_id = preset_info["preset_id"]
+    path = find_precomputed_file("anomaly", region=f"preset_{preset_id}")
+    if not path:
+        return None
+    con = duckdb.connect(database=":memory:", read_only=False)
+    try:
+        row = con.execute(
+            """
+            SELECT current, median, p10, p90, z_score, percentile, n_prior_years, std_val, mtd_days
+            FROM read_parquet(?)
+            WHERE area_id = ? AND month = ? AND month_to_date
+            LIMIT 1
+            """,
+            [str(path), preset_id, month],
+        ).fetchone()
+    except Exception:
+        return None
+    finally:
+        con.close()
+    if not row:
+        return None
+
+    current, median, p10, p90, z_score, percentile, n_prior, std_val, mtd_days = row
+    # Same null rule as the other paths: z only with >= 10 prior years and std >= 1
+    if n_prior is None or n_prior < 10 or std_val is None or std_val < 1 or z_score is None:
+        z_val: Optional[float] = None
+    else:
+        z_val = round(max(-10.0, min(10.0, float(z_score))), 2)
+
+    onset_shift_days, onset_shift_min_days = get_preset_onset_shift(
+        region=preset_info["region"], area_id=preset_info["area_id"], year=int(month[:4])
+    )
+    return {
+        "current": round(float(current), 2),
+        "median": round(float(median), 2),
+        "p10": round(float(p10), 2),
+        "p90": round(float(p90), 2),
+        "z_score": z_val,
+        "percentile": round(float(percentile), 1),
+        "onset_shift_days": onset_shift_days,
+        "month_to_date": True,
+        "mtd_days": int(mtd_days) if mtd_days is not None else None,
+        "onset_shift_min_days": onset_shift_min_days,
+    }
+
+
+def _last_month_in(parquet_path: Optional[str]) -> Optional[str]:
+    if not parquet_path or not os.path.exists(parquet_path):
+        return None
+    con = duckdb.connect(database=":memory:", read_only=False)
+    try:
+        res = con.execute("SELECT max(month) FROM read_parquet(?)", [parquet_path]).fetchone()
+        return res[0] if res else None
+    except Exception:
+        return None
+    finally:
+        con.close()
+
+
 def compute_on_the_fly_anomaly(
     month: str,
     bbox: Optional[str] = None,
@@ -472,6 +558,17 @@ def get_anomaly_metrics(
         )
         if precomputed:
             return precomputed
+
+    # Case 1b: non-India preset, partial (month-to-date) month. Outside India only
+    # S-NPP covered these boxes and it stopped on 2 Nov 2026, so the latest month
+    # is partial: use the day-matched sidecar; with no fair baseline, say so
+    # instead of comparing Nov 1-N against full past months.
+    if matched_preset and matched_preset["area_id"] != "pb_hr":
+        mtd = read_preset_mtd_anomaly(month, matched_preset)
+        if mtd:
+            return mtd
+        if month == _last_month_in(parquet_path):
+            return sensor_gap_anomaly()
 
     # Case 2: Other preset or custom polygon -> On-the-fly calculation
     return compute_on_the_fly_anomaly(

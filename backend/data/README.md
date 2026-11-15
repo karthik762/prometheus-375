@@ -19,6 +19,7 @@ Regions: `india`, `brazil`, `australia`, `california`, `greece`.
 | `metrics.json` | 2020 holdout validation: MAE/MAPE per region and sub-area (e.g. `india.pb_hr`), baseline (single global MODIS→VIIRS ratio) and improvement %, monthly actual vs predicted. |
 | `anomaly_<region>.parquet` | Per area × month: `current, median, p10, p90, z_score, percentile, n_prior_years, modis_share, month_to_date, mtd_days`. Feeds `/anomaly`. (5 files) |
 | `onset_<region>.parquet` | Per area × season: `season_start/end, complete, season_total, threshold, onset_date, onset_day, median_prior_onset_day, onset_shift_days`, etc. (5 files) |
+| `anomaly_preset_<preset_id>.parquet` | Same columns as `anomaly_<region>` (+ `std_val`) for each non-India preset box (`brazil_pantanal`, `australia_nsw`, `california`, `greece`), from `pipeline/07_anomaly.py --preset`. `/anomaly` uses its day-matched 2026-11 row (Nov 1–13). (4 files) |
 | `onset_daily_<region>.parquet` | Daily counts per area: `area_id, date, count, source`, used to compute onset. (5 files) |
 
 Not included on purpose: anything from `data/raw/`, `data/interim/`, and intermediate
