@@ -70,6 +70,8 @@ export interface ValidationData {
 export interface ApiError {
   message: string;
   status?: number;
+  /** Set when the request hit the client-side timeout (not a caller abort) */
+  timedOut?: boolean;
 }
 
 export interface ApiResponse<T> {

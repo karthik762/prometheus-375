@@ -1,6 +1,7 @@
 import React from 'react';
 import type { LiveState } from '../../hooks/useLive';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
+import { useSelection } from '../../hooks/useSelection';
 
 interface LiveHotspotsControlProps {
   /** Shared live state from FireMap (same fetch that feeds the map layer). */
@@ -15,6 +16,8 @@ export const LiveHotspotsLayer: React.FC<LiveHotspotsControlProps> = ({
   onToggleLive,
 }) => {
   const { data: liveData, isMock, loading, error, refetch } = live;
+  const { area } = useSelection();
+  const isCustomArea = area.type !== 'preset';
   const featureCount = liveData?.features?.length ?? 0;
   const is404 = error?.status === 404;
   // Any other failure/timeout: show nothing as "active", offer a retry
@@ -108,7 +111,9 @@ export const LiveHotspotsLayer: React.FC<LiveHotspotsControlProps> = ({
         </p>
       ) : isFailed && !loading ? (
         <p role="status" style={{ fontSize: '0.75rem', color: 'var(--color-gold)', margin: 0 }}>
-          Live feed unavailable —{' '}
+          {isCustomArea
+            ? "Couldn't fetch live fires for this area — try a smaller area, or"
+            : 'Live feed unavailable —'}{' '}
           <button
             type="button"
             onClick={refetch}

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
 import { useSelection, CURRENT_MONTH, RECORD_START } from '../../hooks/useSelection';
 import { getHeatmapColor, getRampLegendSteps } from '../../lib/colorRamp';
-import { formatCount, formatMonthName } from '../../lib/format';
+import { areaErrorCopy, formatCount, formatMonthName } from '../../lib/format';
 import { LoadingState, EmptyState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 import type { CalendarRow } from '../../api/types';
@@ -106,8 +106,7 @@ export const BurnCalendar: React.FC = () => {
         {error && !loading && (
           <ErrorState
             height="260px"
-            message="Couldn't load the burning calendar"
-            subtext={error.message}
+            {...areaErrorCopy(area, error, "Couldn't load the burning calendar")}
             onRetry={refetch}
           />
         )}

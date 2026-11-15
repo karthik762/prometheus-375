@@ -2,13 +2,13 @@ import React from 'react';
 import { useAnomaly } from '../../hooks/useAnomaly';
 import { useSelection, CURRENT_MONTH } from '../../hooks/useSelection';
 import { CountUp } from './CountUp';
-import { formatCount, formatMonthShort } from '../../lib/format';
+import { areaErrorCopy, formatCount, formatMonthShort } from '../../lib/format';
 import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 
 export const NowVsNormalCard: React.FC = () => {
   const { data: anomaly, isMock, loading, error, refetch } = useAnomaly();
-  const { selectedMonth } = useSelection();
+  const { selectedMonth, area } = useSelection();
 
   const monthLabel = formatMonthShort(selectedMonth).toUpperCase();
   const monthName = new Date(`${selectedMonth}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
@@ -75,8 +75,7 @@ export const NowVsNormalCard: React.FC = () => {
           ) : (
             <ErrorState
               height="240px"
-              message="Couldn't load this month's numbers"
-              subtext={error.message}
+              {...areaErrorCopy(area, error, "Couldn't load this month's numbers")}
               onRetry={refetch}
             />
           )
