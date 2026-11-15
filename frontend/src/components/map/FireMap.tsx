@@ -89,6 +89,27 @@ function areaBounds(area: AreaSelection): maplibregl.LngLatBoundsLike | null {
   return null;
 }
 
+/** Show `area` as the dashed AOI outline (or clear it with null). */
+function setAoiOutline(map: maplibregl.Map, area: AreaSelection | null) {
+  const source = map.getSource('aoi-source') as maplibregl.GeoJSONSource | undefined;
+  if (!source) return;
+  let feature: GeoJSON.Feature | null = null;
+  if (area?.polygon) {
+    feature = { type: 'Feature', geometry: area.polygon, properties: {} };
+  } else if (area?.bbox && area.bbox.length === 4) {
+    const [minX, minY, maxX, maxY] = area.bbox;
+    feature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY], [minX, minY]]],
+      },
+      properties: {},
+    };
+  }
+  source.setData({ type: 'FeatureCollection', features: feature ? [feature] : [] });
+}
+
 export const FireMap: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -289,10 +310,15 @@ export const FireMap: React.FC = () => {
 
         td.start();
 
-        td.on('finish', () => {
+        td.on('finish', (finishedId) => {
           const snapshot = td.getSnapshot();
           if (snapshot && snapshot.length > 0) {
-            const latestFeature = snapshot[snapshot.length - 1];
+            const latestFeature = snapshot.find((f) => f.id === finishedId) ?? snapshot[snapshot.length - 1];
+            // Keep only the latest drawn area: drop every earlier polygon
+            const staleIds = snapshot
+              .filter((f) => f.id !== latestFeature.id && f.id != null)
+              .map((f) => f.id as NonNullable<typeof f.id>);
+            if (staleIds.length > 0) td.removeFeatures(staleIds);
             if (
               latestFeature.geometry.type === 'Polygon' ||
               (latestFeature.geometry.type as string) === 'MultiPolygon'
@@ -353,24 +379,17 @@ export const FireMap: React.FC = () => {
         })
       : 0;
 
-    const source = map.getSource('aoi-source') as maplibregl.GeoJSONSource | undefined;
-    if (source) {
-      let feature: GeoJSON.Feature | null = null;
-      if (area.polygon) {
-        feature = { type: 'Feature', geometry: area.polygon, properties: {} };
-      } else if (area.bbox && area.bbox.length === 4) {
-        const [minX, minY, maxX, maxY] = area.bbox;
-        feature = {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY], [minX, minY]]],
-          },
-          properties: {},
-        };
-      }
-      source.setData({ type: 'FeatureCollection', features: feature ? [feature] : [] });
+    // A preset/bbox replaced the drawn area → wipe the drawing (and any half-drawn polygon)
+    const td = drawRef.current;
+    if (td && area.type !== 'polygon') {
+      try {
+        td.clear();
+        td.setMode('render');
+      } catch { /* draw not started yet */ }
+      setIsDrawing(false);
     }
+
+    setAoiOutline(map, area);
 
     return () => cancelAnimationFrame(raf);
   }, [area, mapLoaded]);
@@ -400,12 +419,16 @@ export const FireMap: React.FC = () => {
     if (isDrawing) {
       drawRef.current.setMode('render');
       setIsDrawing(false);
+      // Cancelled without finishing → bring the current area's outline back
+      if (mapRef.current) setAoiOutline(mapRef.current, area);
     } else {
+      // Starting a new drawing: hide the current preset/area outline
+      if (mapRef.current) setAoiOutline(mapRef.current, null);
       drawRef.current.setMode('polygon');
       setIsDrawing(true);
       setDrawNote(null);
     }
-  }, [isDrawing]);
+  }, [isDrawing, area]);
 
   return (
     <div id="explore" className="section" style={{ padding: 'var(--space-2xl) 0' }}>
