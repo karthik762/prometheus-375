@@ -124,6 +124,8 @@ export const FireMap: React.FC = () => {
   // destroys the map and snaps the camera back to the initial India view).
   const setPolygonRef = useRef(setPolygon);
   setPolygonRef.current = setPolygon;
+  const areaRef = useRef(area);
+  areaRef.current = area;
 
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [showLive, setShowLive] = useState<boolean>(true);
@@ -330,6 +332,7 @@ export const FireMap: React.FC = () => {
               if (size > MAX_AREA_DEG2) {
                 // Too big to query safely (a ~6,600 deg² area took the backend down): drop it
                 td.clear();
+                setAoiOutline(map, areaRef.current); // previous area stays active → show it again
                 setDrawNote(
                   `That area is about ${Math.round(size / CALIFORNIA_DEG2)}× the size of California, ` +
                     `too large to query. Draw an area up to about twice California's size.`
