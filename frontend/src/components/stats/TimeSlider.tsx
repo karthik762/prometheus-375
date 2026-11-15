@@ -11,12 +11,14 @@ const MILESTONES = [
 ];
 
 const START_YEAR = Number(RECORD_START.slice(0, 4));
-const MAX_INDEX = (Number(CURRENT_MONTH.slice(0, 4)) - START_YEAR) * 12 + Number(CURRENT_MONTH.slice(5)) - 1;
+const monthIndex = (m: string) => (Number(m.slice(0, 4)) - START_YEAR) * 12 + Number(m.slice(5)) - 1;
 
 export const TimeSlider: React.FC = () => {
-  const { selectedMonth, setSelectedMonth } = useSelection();
+  const { selectedMonth, setSelectedMonth, dataEnd } = useSelection();
+  // Slider stops at the last month in the data (backend 400s anything later)
+  const maxIndex = monthIndex(dataEnd < CURRENT_MONTH ? dataEnd : CURRENT_MONTH);
 
-  // Month index: RECORD_START (2001-01) is 0, CURRENT_MONTH is MAX_INDEX
+  // Month index: RECORD_START (2001-01) is 0, the data end is maxIndex
   const getIndexFromMonth = (mStr: string): number => {
     const [y, m] = mStr.split('-').map(Number);
     return (y - START_YEAR) * 12 + (m - 1);
@@ -28,7 +30,7 @@ export const TimeSlider: React.FC = () => {
     return `${y}-${String(m).padStart(2, '0')}`;
   };
 
-  const currentIndex = Math.min(MAX_INDEX, Math.max(0, getIndexFromMonth(selectedMonth)));
+  const currentIndex = Math.min(maxIndex, Math.max(0, getIndexFromMonth(selectedMonth)));
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newIdx = parseInt(e.target.value, 10);
@@ -62,7 +64,7 @@ export const TimeSlider: React.FC = () => {
             <button
               key={ms.year}
               type="button"
-              onClick={() => setSelectedMonth(ms.month)}
+              onClick={() => setSelectedMonth(ms.month > dataEnd ? dataEnd : ms.month)}
               aria-pressed={selectedMonth === ms.month}
               aria-label={`Jump to ${formatMonthName(ms.month)}`}
               style={{
@@ -85,7 +87,7 @@ export const TimeSlider: React.FC = () => {
       <input
         type="range"
         min={0}
-        max={MAX_INDEX}
+        max={maxIndex}
         value={currentIndex}
         onChange={handleSliderChange}
         aria-label="Timeline scrubber"

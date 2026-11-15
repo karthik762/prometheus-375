@@ -229,6 +229,18 @@ export async function fetchPresets(signal?: AbortSignal): Promise<ApiResponse<Pr
 }
 
 /**
+ * GET /health → data_end: last YYYY-MM in harmonized.parquet (null if unknown).
+ * The backend 400s /anomaly and /calendar?start past this month.
+ */
+export async function fetchDataEnd(signal?: AbortSignal): Promise<string | null> {
+  const rows = mockCalendar as CalendarRow[];
+  const mockEnd = rows.length ? rows[rows.length - 1].month : null;
+  const res = await request<{ data_end?: string | null }>('/health', {}, signal, { data_end: mockEnd });
+  const end = res.data?.data_end;
+  return typeof end === 'string' && /^\d{4}-\d{2}$/.test(end) ? end : null;
+}
+
+/**
  * GET /calendar?start=YYYY-MM&end=YYYY-MM&polygon/bbox=...
  */
 export async function fetchCalendar(

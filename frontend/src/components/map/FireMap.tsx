@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import { TerraDraw, TerraDrawPolygonMode, TerraDrawRectangleMode, TerraDrawSelectMode, TerraDrawRenderMode } from 'terra-draw';
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
-import { useSelection } from '../../hooks/useSelection';
+import { useSelection, RECORD_START } from '../../hooks/useSelection';
 import { useLive } from '../../hooks/useLive';
 import { RegionPresets } from './RegionPresets';
 import { LiveHotspotsLayer } from './LiveHotspotsLayer';
@@ -116,7 +116,9 @@ export const FireMap: React.FC = () => {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const drawRef = useRef<TerraDraw | null>(null);
 
-  const { area, startMonth, endMonth, setStartMonth, setEndMonth, setPolygon } = useSelection();
+  const { area, startMonth, endMonth, dataEnd, setStartMonth, setEndMonth, setPolygon } = useSelection();
+  // type="month" falls back to text in some browsers, so also clamp typed values
+  const clampToDataEnd = (m: string) => (/^\d{4}-\d{2}$/.test(m) && m > dataEnd ? dataEnd : m);
   // One live fetch shared by the map layer and the side panel (so "retry" refreshes both)
   const live = useLive(7);
   const { data: liveData, isMock: liveIsMock, error: liveError } = live;
@@ -505,9 +507,11 @@ export const FireMap: React.FC = () => {
                   </label>
                   <input
                     id="start-month-input"
-                    type="text"
+                    type="month"
+                    min={RECORD_START}
+                    max={dataEnd}
                     value={startMonth}
-                    onChange={(e) => setStartMonth(e.target.value)}
+                    onChange={(e) => setStartMonth(clampToDataEnd(e.target.value))}
                     placeholder="2001-01"
                     style={{
                       width: '100%',
@@ -528,10 +532,12 @@ export const FireMap: React.FC = () => {
                   </label>
                   <input
                     id="end-month-input"
-                    type="text"
+                    type="month"
+                    min={RECORD_START}
+                    max={dataEnd}
                     value={endMonth}
-                    onChange={(e) => setEndMonth(e.target.value)}
-                    placeholder="2026-11"
+                    onChange={(e) => setEndMonth(clampToDataEnd(e.target.value))}
+                    placeholder={dataEnd}
                     style={{
                       width: '100%',
                       backgroundColor: 'var(--color-bg-base)',

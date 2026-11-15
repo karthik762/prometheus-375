@@ -98,6 +98,8 @@ def get_parquet_path() -> str:
 class HealthResponse(BaseModel):
     status: str
     parquet_exists: bool
+    # Last YYYY-MM in harmonized.parquet (frontend uses it as the date-input max)
+    data_end: Optional[str] = None
 
 
 class Preset(BaseModel):
@@ -182,9 +184,14 @@ PRESETS: List[dict] = [
 def health():
     """Health check endpoint indicating service status and data file availability."""
     parquet_path = get_parquet_path()
+    try:
+        data_end = last_data_month(parquet_path)
+    except Exception:
+        data_end = None
     return {
         "status": "ok",
         "parquet_exists": os.path.exists(parquet_path),
+        "data_end": data_end,
     }
 
 
@@ -196,6 +203,45 @@ def presets():
 
 def _parquet_version(parquet_path: str) -> float:
     return os.path.getmtime(parquet_path)
+
+
+@lru_cache(maxsize=8)
+def _last_month_cached(parquet_path: str, version: float) -> Optional[str]:
+    """Latest YYYY-MM in the parquet. Reads row-group stats (no scan); DuckDB fallback."""
+    try:
+        import pyarrow.parquet as pq
+        md = pq.ParquetFile(parquet_path).metadata
+        idx = md.schema.names.index("month")
+        maxes = []
+        for r in range(md.num_row_groups):
+            stats = md.row_group(r).column(idx).statistics
+            if stats is None or not stats.has_min_max:
+                raise ValueError("missing month stats")
+            mx = stats.max
+            maxes.append(mx.decode() if isinstance(mx, bytes) else str(mx))
+        if maxes:
+            return max(maxes)
+    except Exception:
+        pass
+    con = duckdb.connect(database=":memory:")
+    try:
+        row = con.execute("SELECT MAX(month) FROM read_parquet(?)", [parquet_path]).fetchone()
+    finally:
+        con.close()
+    return row[0] if row else None
+
+
+def last_data_month(parquet_path: Optional[str] = None) -> Optional[str]:
+    """Last month present in harmonized.parquet, or None when the file is missing."""
+    parquet_path = parquet_path or get_parquet_path()
+    if not os.path.exists(parquet_path):
+        return None
+    return _last_month_cached(parquet_path, _parquet_version(parquet_path))
+
+
+def _reject_past_data_end(month: str, last: Optional[str]) -> None:
+    if last and month > last:
+        raise HTTPException(status_code=400, detail=f"Data runs to {last}")
 
 
 @lru_cache(maxsize=128)
@@ -290,6 +336,16 @@ def calendar(
             detail=f"Harmonized parquet data not found at '{parquet_path}'",
         )
 
+    # start past the data end → 400; end past it → clamp to the last data month
+    last = last_data_month(parquet_path)
+    if start:
+        validate_month_format(start)
+        _reject_past_data_end(start, last)
+    if end:
+        validate_month_format(end)
+        if last and end > last:
+            end = last
+
     t0 = time.perf_counter()
     no_data, rows = _calendar_cached(start, end, bbox, polygon, parquet_path, _parquet_version(parquet_path))
     timing_logger.info("/calendar total %.0f ms (polygon=%s)", (time.perf_counter() - t0) * 1000, bool(polygon))
@@ -321,6 +377,8 @@ def anomaly(
     and season onset shift for the specified month and area.
     """
     parquet_path = get_parquet_path()
+    validate_month_format(month)
+    _reject_past_data_end(month, last_data_month(parquet_path))
     t0 = time.perf_counter()
     if os.path.exists(parquet_path):
         result = _anomaly_cached(month, bbox, polygon, parquet_path, _parquet_version(parquet_path))

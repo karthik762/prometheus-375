@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { AreaSelection, Preset } from '../api/types';
+import { fetchDataEnd } from '../api/api';
 import type { ColorScaleType } from '../lib/colorRamp';
 
 const DEFAULT_AREA: AreaSelection = {
@@ -14,6 +15,8 @@ interface SelectionContextType {
   startMonth: string;
   endMonth: string;
   selectedMonth: string;
+  /** Last month in harmonized.parquet (from /health); CURRENT_MONTH until known */
+  dataEnd: string;
   colorScale: ColorScaleType;
   setArea: (area: AreaSelection) => void;
   setPreset: (preset: Preset) => void;
@@ -39,6 +42,25 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [selectedMonth, setSelectedMonth] = useState<string>(CURRENT_MONTH);
   // Fire ramp by default; viridis (AGENTS.md colour-blind-safe option) is one click away in the NavBar
   const [colorScale, setColorScale] = useState<ColorScaleType>('fire');
+  const [dataEnd, setDataEnd] = useState<string>(CURRENT_MONTH);
+
+  // The backend rejects months past the data end, so learn it once and keep
+  // every month in the selection at or before it.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchDataEnd(controller.signal)
+      .then((end) => {
+        if (!end) return;
+        setDataEnd(end);
+        setEndMonth((m) => (m > end ? end : m));
+        setSelectedMonth((m) => (m > end ? end : m));
+        setStartMonth((m) => (m > end ? end : m));
+      })
+      .catch(() => {
+        /* backend down / aborted: keep CURRENT_MONTH as the bound */
+      });
+    return () => controller.abort();
+  }, []);
 
   // Stable identities: FireMap's init effect depends on setPolygon, and a new
   // function each render used to tear down and re-create the map (camera reset
@@ -76,6 +98,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         startMonth,
         endMonth,
         selectedMonth,
+        dataEnd,
         colorScale,
         setArea,
         setPreset,
