@@ -75,7 +75,8 @@ def test_anomaly_pb_hr_aligned():
     assert resp_nov.status_code == 200
     d_nov = resp_nov.json()
     assert d_nov["percentile"] == 11.5
-    assert d_nov["onset_shift_days"] == 28.5
+    assert d_nov["onset_shift_days"] is None  # onset not reached yet
+    assert d_nov["onset_shift_min_days"] == 28.5
     print(f"PASS test_anomaly_pb_hr_aligned 2026-11: pct={d_nov['percentile']}, onset={d_nov['onset_shift_days']}")
 
     # 2. 2026-10

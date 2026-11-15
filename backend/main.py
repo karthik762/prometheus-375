@@ -93,6 +93,8 @@ class AnomalyResponse(BaseModel):
     z_score: float
     percentile: float
     onset_shift_days: Optional[float] = None
+    # Onset not reached yet: lower bound on the delay (DECISIONS 2026-11-14 15:35)
+    onset_shift_min_days: Optional[float] = None
 
 
 class BeforeAfterEntry(BaseModel):
