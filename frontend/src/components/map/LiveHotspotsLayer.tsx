@@ -1,19 +1,24 @@
 import React from 'react';
-import { useLive } from '../../hooks/useLive';
+import type { LiveState } from '../../hooks/useLive';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 
 interface LiveHotspotsControlProps {
+  /** Shared live state from FireMap (same fetch that feeds the map layer). */
+  live: LiveState;
   showLive: boolean;
   onToggleLive: (show: boolean) => void;
 }
 
 export const LiveHotspotsLayer: React.FC<LiveHotspotsControlProps> = ({
+  live,
   showLive,
   onToggleLive,
 }) => {
-  const { data: liveData, isMock, loading, error } = useLive(7);
+  const { data: liveData, isMock, loading, error, refetch } = live;
   const featureCount = liveData?.features?.length ?? 0;
   const is404 = error?.status === 404;
+  // Any other failure/timeout: show nothing as "active", offer a retry
+  const isFailed = !!error && !is404;
 
   return (
     <div
@@ -65,6 +70,24 @@ export const LiveHotspotsLayer: React.FC<LiveHotspotsControlProps> = ({
             >
               Available soon
             </span>
+          ) : isFailed && !loading ? (
+            <button
+              type="button"
+              onClick={refetch}
+              title={error?.message}
+              className="label-mono"
+              style={{
+                fontSize: '0.6875rem',
+                color: 'var(--color-gold)',
+                backgroundColor: 'rgba(184, 156, 107, 0.1)',
+                border: '1px solid var(--color-gold)',
+                borderRadius: '3px',
+                padding: '2px 8px',
+                cursor: 'pointer',
+              }}
+            >
+              Retry
+            </button>
           ) : (
             <span
               className="label-mono"
@@ -82,6 +105,25 @@ export const LiveHotspotsLayer: React.FC<LiveHotspotsControlProps> = ({
       {is404 ? (
         <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', margin: 0 }}>
           Live fire data isn't available yet on the connected server.
+        </p>
+      ) : isFailed && !loading ? (
+        <p role="status" style={{ fontSize: '0.75rem', color: 'var(--color-gold)', margin: 0 }}>
+          Live feed unavailable —{' '}
+          <button
+            type="button"
+            onClick={refetch}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: 'var(--color-gold)',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              font: 'inherit',
+            }}
+          >
+            retry
+          </button>
         </p>
       ) : (
         <p style={{ fontSize: '0.75rem', color: 'var(--color-text-tertiary)', margin: 0 }}>

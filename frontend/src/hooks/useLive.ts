@@ -3,7 +3,16 @@ import type { LiveHotspotsCollection, ApiError } from '../api/types';
 import { fetchLiveHotspots } from '../api/api';
 import { useSelection } from './useSelection';
 
-export function useLive(days = 7) {
+export interface LiveState {
+  data: LiveHotspotsCollection | null;
+  isMock: boolean;
+  loading: boolean;
+  /** Non-null when the live feed failed/timed out (data is then empty, never mock). */
+  error: ApiError | null;
+  refetch: () => void;
+}
+
+export function useLive(days = 7): LiveState {
   const { area } = useSelection();
   const [data, setData] = useState<LiveHotspotsCollection | null>(null);
   const [isMock, setIsMock] = useState<boolean>(false);
@@ -13,10 +22,7 @@ export function useLive(days = 7) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadData = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
+    abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -27,24 +33,22 @@ export function useLive(days = 7) {
       .then((res) => {
         setData(res.data);
         setIsMock(res.isMock);
+        setError(res.error);
         setLoading(false);
       })
       .catch((err: unknown) => {
-        if ((err as Error)?.name === 'AbortError') return;
-        setData(null);
+        // fetchLiveHotspots only rejects on abort (a newer request superseded this one)
+        if ((err as Error)?.name === 'AbortError' || controller.signal.aborted) return;
+        setData({ type: 'FeatureCollection', features: [] });
         setIsMock(false);
-        setError(err as ApiError);
+        setError({ status: 0, message: (err as Error)?.message || 'Live feed failed' });
         setLoading(false);
       });
   }, [area, days]);
 
   useEffect(() => {
     loadData();
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
+    return () => abortControllerRef.current?.abort();
   }, [loadData]);
 
   return { data, isMock, loading, error, refetch: loadData };

@@ -191,25 +191,57 @@ function buildMockAnomaly(month: string): Anomaly {
   };
 }
 
+const LIVE_TIMEOUT_MS = 20_000;
+const EMPTY_LIVE: LiveHotspotsCollection = { type: 'FeatureCollection', features: [] };
+
+export interface LiveResponse extends ApiResponse<LiveHotspotsCollection> {
+  /** Set when /live failed or timed out; data is then an empty FeatureCollection. */
+  error: ApiError | null;
+}
+
 /**
  * GET /live?days=7&polygon/bbox=...
+ *
+ * Unlike the other endpoints this never throws on a backend failure and never
+ * substitutes the Punjab mock: a slow/failed live feed must not look like real
+ * detections for whatever area is selected. It resolves to an empty collection
+ * plus `error`. The mock is used only in offline mode (no VITE_API_URL).
+ * Rejects only with AbortError when the caller's `signal` aborts.
  */
 export async function fetchLiveHotspots(
   area: AreaSelection,
   days = 7,
   signal?: AbortSignal
-): Promise<ApiResponse<LiveHotspotsCollection>> {
-  const params: Record<string, string | number | undefined> = {
-    ...buildSpatialParams(area),
-    days,
-  };
+): Promise<LiveResponse> {
+  if (!API_BASE) {
+    return { data: mockLive as unknown as LiveHotspotsCollection, isMock: true, error: null };
+  }
 
-  return request<LiveHotspotsCollection>(
-    '/live',
-    params,
-    signal,
-    mockLive as unknown as LiveHotspotsCollection
-  );
+  // Own controller so we can time out without confusing it with a caller abort
+  const controller = new AbortController();
+  const onCallerAbort = () => controller.abort();
+  signal?.addEventListener('abort', onCallerAbort);
+  const timer = setTimeout(() => controller.abort(), LIVE_TIMEOUT_MS);
+
+  try {
+    const res = await request<LiveHotspotsCollection>(
+      '/live',
+      { ...buildSpatialParams(area), days },
+      controller.signal,
+      EMPTY_LIVE
+    );
+    return { data: res.data, isMock: false, error: null };
+  } catch (err: unknown) {
+    if (signal?.aborted) throw err; // superseded by a newer request
+    const error: ApiError =
+      (err as Error)?.name === 'AbortError'
+        ? { status: 0, message: `Live feed timed out after ${LIVE_TIMEOUT_MS / 1000}s` }
+        : (err as ApiError);
+    return { data: EMPTY_LIVE, isMock: false, error };
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onCallerAbort);
+  }
 }
 
 /**

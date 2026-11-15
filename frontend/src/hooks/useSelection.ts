@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import type { AreaSelection, Preset } from '../api/types';
 import type { ColorScaleType } from '../lib/colorRamp';
 
@@ -40,30 +40,33 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   // Fire ramp by default; viridis (AGENTS.md colour-blind-safe option) is one click away in the NavBar
   const [colorScale, setColorScale] = useState<ColorScaleType>('fire');
 
-  const setPreset = (preset: Preset) => {
+  // Stable identities: FireMap's init effect depends on setPolygon, and a new
+  // function each render used to tear down and re-create the map (camera reset
+  // to India) on every preset click.
+  const setPreset = useCallback((preset: Preset) => {
     setArea({
       type: 'preset',
       presetId: preset.id,
       name: preset.name,
       bbox: preset.bbox,
     });
-  };
+  }, []);
 
-  const setBBox = (bbox: [number, number, number, number], name?: string) => {
+  const setBBox = useCallback((bbox: [number, number, number, number], name?: string) => {
     setArea({
       type: 'bbox',
       name: name || 'Custom Bounding Box',
       bbox,
     });
-  };
+  }, []);
 
-  const setPolygon = (polygon: GeoJSON.Polygon | GeoJSON.MultiPolygon, name?: string) => {
+  const setPolygon = useCallback((polygon: GeoJSON.Polygon | GeoJSON.MultiPolygon, name?: string) => {
     setArea({
       type: 'polygon',
       name: name || 'Custom Drawn Area',
       polygon,
     });
-  };
+  }, []);
 
   return React.createElement(
     SelectionContext.Provider,

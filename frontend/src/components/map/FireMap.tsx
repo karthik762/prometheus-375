@@ -8,6 +8,7 @@ import { RegionPresets } from './RegionPresets';
 import { LiveHotspotsLayer } from './LiveHotspotsLayer';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 import type { Polygon, MultiPolygon } from 'geojson';
+import type { AreaSelection } from '../../api/types';
 
 // Esri World Dark Gray Canvas — no API key needed. (Carto's dark_all raster
 // tiles now return an "API KEY REQUIRED" placeholder for every request.)
@@ -35,13 +36,44 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
+/** [[minLon,minLat],[maxLon,maxLat]] for a preset/bbox or a drawn polygon. */
+function areaBounds(area: AreaSelection): maplibregl.LngLatBoundsLike | null {
+  if (area.bbox && area.bbox.length === 4) {
+    const [minX, minY, maxX, maxY] = area.bbox;
+    return [[minX, minY], [maxX, maxY]];
+  }
+  if (area.polygon) {
+    const rings = area.polygon.type === 'Polygon' ? [area.polygon.coordinates] : area.polygon.coordinates;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const poly of rings) {
+      for (const ring of poly) {
+        for (const [x, y] of ring) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    return Number.isFinite(minX) ? [[minX, minY], [maxX, maxY]] : null;
+  }
+  return null;
+}
+
 export const FireMap: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const drawRef = useRef<TerraDraw | null>(null);
 
   const { area, startMonth, endMonth, setStartMonth, setEndMonth, setPolygon } = useSelection();
-  const { data: liveData, isMock: liveIsMock, error: liveError } = useLive(7);
+  // One live fetch shared by the map layer and the side panel (so "retry" refreshes both)
+  const live = useLive(7);
+  const { data: liveData, isMock: liveIsMock, error: liveError } = live;
+
+  // Read through a ref so the map-init effect never re-runs (re-running it
+  // destroys the map and snaps the camera back to the initial India view).
+  const setPolygonRef = useRef(setPolygon);
+  setPolygonRef.current = setPolygon;
 
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [showLive, setShowLive] = useState<boolean>(true);
@@ -223,7 +255,7 @@ export const FireMap: React.FC = () => {
               latestFeature.geometry.type === 'Polygon' ||
               (latestFeature.geometry.type as string) === 'MultiPolygon'
             ) {
-              setPolygon(
+              setPolygonRef.current(
                 latestFeature.geometry as Polygon | MultiPolygon,
                 'Custom Drawn Boundary'
               );
@@ -250,8 +282,9 @@ export const FireMap: React.FC = () => {
       }
       map.remove();
       mapRef.current = null;
+      setMapLoaded(false);
     };
-  }, [setPolygon]);
+  }, []);
 
   // Update AOI boundary & fly smoothly to target region
   useEffect(() => {
@@ -294,20 +327,20 @@ export const FireMap: React.FC = () => {
       features: feature ? [feature] : [],
     });
 
-    if (area.bbox && area.bbox.length === 4) {
-      const [minX, minY, maxX, maxY] = area.bbox;
-      map.fitBounds(
-        [
-          [minX, minY],
-          [maxX, maxY],
-        ],
-        {
-          padding: 60,
-          duration: 520,
-          easing: (t) => t * (2 - t),
-        }
-      );
-    }
+    const bounds = areaBounds(area);
+    if (!bounds) return;
+
+    // Resize first (the container can change size after layout/reveal animations),
+    // then fit on the next frame so the camera uses the real canvas dimensions.
+    const raf = requestAnimationFrame(() => {
+      map.resize();
+      map.fitBounds(bounds, {
+        padding: 60,
+        duration: 900,
+        easing: (t) => t * (2 - t),
+      });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [area, mapLoaded]);
 
   // Update live hotspots visibility
@@ -445,7 +478,7 @@ export const FireMap: React.FC = () => {
               {isDrawing ? 'Click points on map to close' : 'Draw your own area'}
             </button>
 
-            <LiveHotspotsLayer showLive={showLive} onToggleLive={setShowLive} />
+            <LiveHotspotsLayer live={live} showLive={showLive} onToggleLive={setShowLive} />
           </div>
         </div>
 
@@ -504,7 +537,7 @@ export const FireMap: React.FC = () => {
                   letterSpacing: '0.04em',
                 }}
               >
-                {area.name ? area.name.replace(/\s*\(.*?\)\s*/g, '') : 'Selected Area'} • NOAA-20/21 • {isLive404 ? 'NRT Inactive' : 'Last 7 days'}
+                {area.name ? area.name.replace(/\s*\(.*?\)\s*/g, '') : 'Selected Area'} • NOAA-20/21 • {isLive404 ? 'NRT Inactive' : liveError ? 'Live feed unavailable' : 'Last 7 days'}
               </span>
               {liveIsMock && !isLive404 && <SampleDataBadge style={{ marginLeft: '4px' }} />}
             </div>
