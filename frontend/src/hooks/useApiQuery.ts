@@ -3,7 +3,7 @@ import type { ApiError, ApiResponse, AreaSelection } from '../api/types';
 import { buildSpatialParams } from '../api/api';
 
 /** Time-only changes (slider drag, date inputs) wait this long before fetching. */
-export const QUERY_DEBOUNCE_MS = 400;
+export const QUERY_DEBOUNCE_MS = 300;
 
 export interface QueryState<T> {
   data: T | null;

@@ -182,12 +182,18 @@ async function request<T>(
 export function buildSpatialParams(area: AreaSelection): Record<string, string> {
   const params: Record<string, string> = {};
   if (area.polygon) {
-    params.polygon = JSON.stringify(area.polygon);
+    // 4 decimals ≈ 11 m, far finer than the 0.25° grid. Drawn shapes otherwise carry
+    // ~15-digit floats, which bloat the URL and split the cache on invisible differences.
+    params.polygon = JSON.stringify(area.polygon, (_k, v) =>
+      typeof v === 'number' ? round4(v) : v
+    );
   } else if (area.bbox) {
-    params.bbox = area.bbox.join(',');
+    params.bbox = area.bbox.map(round4).join(',');
   }
   return params;
 }
+
+const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
 
 export const calendarParams = (area: AreaSelection, start?: string, end?: string) => ({
   ...buildSpatialParams(area),
