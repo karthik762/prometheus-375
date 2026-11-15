@@ -40,7 +40,7 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 - [x] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30 — done: https://prometheus-375.vercel.app (built against https://prometheus-375.onrender.com), verified in S1
 
 ## Sunday
-- [x] **S1** S — React go/no-go (else Streamlit fallback) (help: Karthik, Rishitha, Poojitha) — after F7 — due Sun 10:00 — **GO on React** (Snehitha, ~11:00): live https://prometheus-375.vercel.app on Render verified — F3 calendar, F4 card/slider, F5 downloads, presets, drawn area, palettes, live layer (1384 NOAA-20/21 pts), phone width; no JS errors. Streamlit fallback not needed. Risks + demo rules in DECISIONS
+- [x] **S1** S — React go/no-go (else Streamlit fallback) (help: Karthik, Rishitha, Poojitha) — after F7 — due Sun 10:00 — **GO on React** (Snehitha, 11:25): team go-checklist 11/11 on live https://prometheus-375.vercel.app — first paint ~1 s, no console errors, no Sample-data badge, /health ok, all 5 presets zoom + outline + live hotspots, real calendar per region, slider+card in sync (thin 2001–02 baselines now say so instead of z ±10), drawn area updates calendar + card (~7–10 s), both CSVs, phone width (emulated — still check on a real phone). Streamlit fallback not needed
 - [ ] **S2** S — Polish: accessibility, mobile, loading/empty/error states (help: Rishitha) — after S1 — due Sun 14:00
 - [ ] **S3** K — Hardening: caching, error handling, keep-warm ping (help: Snehitha) — after B6 — due Sun 14:00
 - [ ] **S4** P — Slides: problem -> proof -> demo -> limitations -> sensor retirement (help: Rishitha) — after D5 — due Sun 17:00

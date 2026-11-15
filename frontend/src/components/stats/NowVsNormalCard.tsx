@@ -17,6 +17,9 @@ export const NowVsNormalCard: React.FC = () => {
   const onset = anomaly?.onset_shift_days;
   const onsetMin = anomaly?.onset_shift_min_days;
   const baselineEnd = Number(selectedMonth.slice(0, 4)) - 1;
+  // Early months (≈2001–2003) have only 1–2 earlier years: the p10–p90 band collapses to one
+  // value and z hits the backend's ±10 cap (e.g. Jul 2002 → z −10, 0th pct). Don't show those.
+  const thinBaseline = !!anomaly && (anomaly.p10 === anomaly.p90 || Math.abs(anomaly.z_score) >= 10);
 
   return (
     <div
@@ -102,12 +105,21 @@ export const NowVsNormalCard: React.FC = () => {
                 marginBottom: 'var(--space-sm)',
               }}
             >
-              {isMonthToDate ? 'Fires so far this month' : `Fires in ${monthName}`}, against a typical{' '}
-              {isMonthToDate ? `${monthName} to date` : monthName} of{' '}
-              <strong style={{ color: 'var(--color-text-primary)' }}>
-                {formatCount(anomaly.median)}
-              </strong>
-              .
+              {thinBaseline ? (
+                <>
+                  Fires in {monthName}. Too few earlier years in the record (it starts Nov 2000) to
+                  define a normal {monthName} yet.
+                </>
+              ) : (
+                <>
+                  {isMonthToDate ? 'Fires so far this month' : `Fires in ${monthName}`}, against a typical{' '}
+                  {isMonthToDate ? `${monthName} to date` : monthName} of{' '}
+                  <strong style={{ color: 'var(--color-text-primary)' }}>
+                    {formatCount(anomaly.median)}
+                  </strong>
+                  .
+                </>
+              )}
             </p>
 
             {/* Season hasn't started: backend sends a lower bound instead of an onset */}
@@ -161,8 +173,14 @@ export const NowVsNormalCard: React.FC = () => {
                 color: 'var(--color-text-tertiary)',
               }}
             >
-              <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
-              <span>Z-Score: {anomaly.z_score >= 0 ? `+${anomaly.z_score.toFixed(2)}` : anomaly.z_score.toFixed(2)}σ</span>
+              {thinBaseline ? (
+                <span>Historical rank and z-score need at least 3 earlier years.</span>
+              ) : (
+                <>
+                  <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
+                  <span>Z-Score: {anomaly.z_score >= 0 ? `+${anomaly.z_score.toFixed(2)}` : anomaly.z_score.toFixed(2)}σ</span>
+                </>
+              )}
             </div>
           </div>
         )}
