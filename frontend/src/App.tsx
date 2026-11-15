@@ -70,7 +70,7 @@ export const AppContent: React.FC = () => {
             {/* Background Image: Forest Fire Ground Line */}
             <img
               src="/images/forest_fire.jpg"
-              alt="Forest Fire Line"
+              alt="A line of low flames creeping through a pine forest floor at night, with smoke drifting between the trees"
               style={{
                 position: 'absolute',
                 top: 0,

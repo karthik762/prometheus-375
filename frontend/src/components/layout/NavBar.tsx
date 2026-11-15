@@ -70,7 +70,7 @@ export const NavBar: React.FC = () => {
           >
             <img
               src="/logo.png?v=3"
-              alt="Prometheus 375 Logo"
+              alt="Prometheus 375"
               style={{
                 width: '100%',
                 height: '100%',
