@@ -337,7 +337,13 @@ export const BeforeAfterChart: React.FC = () => {
         )}
 
         {!loading && !error && chartData.length > 0 && (
-          <div style={{ width: '100%', height: 320 }}>
+          <div
+            style={{ width: '100%', height: 320 }}
+            role="img"
+            aria-label={`Line chart of ${chartData.length} months comparing raw satellite fire counts with the harmonized series${
+              data ? `. ${data.holdout_year} holdout error: ${data.mape}% MAPE` : ''
+            }.`}
+          >
             <ResponsiveContainer width="100%" height="100%">
               <ProofChart data={chartData} partialNote={partialNote} />
             </ResponsiveContainer>

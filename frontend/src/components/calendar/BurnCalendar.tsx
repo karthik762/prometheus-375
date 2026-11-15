@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useCalendar } from '../../hooks/useCalendar';
 import { useSelection, CURRENT_MONTH, RECORD_START } from '../../hooks/useSelection';
 import { getHeatmapColor, getRampLegendSteps } from '../../lib/colorRamp';
@@ -42,6 +42,43 @@ export const BurnCalendar: React.FC = () => {
     }
     return { calendarMap: map, maxCount: max };
   }, [data]);
+
+  // Keyboard: the grid is ONE tab stop (roving tabindex); arrows move between months,
+  // Enter/Space selects. Otherwise ~310 cells are each a Tab stop.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [focusMonth, setFocusMonth] = useState<string | null>(null);
+  const latestDataMonth = data && data.length ? data.reduce((m, r) => (r.month > m ? r.month : m), data[0].month) : null;
+  const tabMonth =
+    focusMonth && calendarMap.has(focusMonth)
+      ? focusMonth
+      : selectedMonth && calendarMap.has(selectedMonth)
+        ? selectedMonth
+        : latestDataMonth;
+
+  const shiftMonth = (month: string, delta: number) => {
+    const [y, m] = month.split('-').map(Number);
+    const i = y * 12 + (m - 1) + delta;
+    return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`;
+  };
+
+  const onGridKeyDown = (e: React.KeyboardEvent, month: string) => {
+    const moves: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -12, ArrowDown: 12 };
+    let target: string | null = null;
+    if (e.key in moves) target = shiftMonth(month, moves[e.key]);
+    else if (e.key === 'Home') target = `${month.slice(0, 4)}-01`;
+    else if (e.key === 'End') target = `${month.slice(0, 4)}-12`;
+    if (!target) return;
+    e.preventDefault();
+    // Skip over months with no data (or the future) in the direction of travel
+    const step = e.key === 'Home' ? 1 : e.key === 'End' ? -1 : Math.sign(moves[e.key]);
+    for (let n = 0; n < 24 && target && !calendarMap.has(target); n++) {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { target = null; break; }
+      target = shiftMonth(target, step);
+    }
+    if (!target || !calendarMap.has(target)) return;
+    setFocusMonth(target);
+    gridRef.current?.querySelector<HTMLButtonElement>(`[data-month="${target}"]`)?.focus();
+  };
 
   // Rows exist but nothing ever burned → an all-dark grid; show a message instead
   const allZero = !!data && data.length > 0 && maxCount === 0;
@@ -157,7 +194,8 @@ export const BurnCalendar: React.FC = () => {
             <div
               style={{ minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '3px' }}
               role="grid"
-              aria-label={`Burning activity heatmap ${FIRST_YEAR}–${CURRENT_YEAR}, one row per year`}
+              ref={gridRef}
+              aria-label={`Burning activity heatmap ${FIRST_YEAR}–${CURRENT_YEAR}, one row per year. Arrow keys move between months, Enter selects.`}
             >
               {/* Month header: one column per month */}
               <div style={{ display: 'grid', gridTemplateColumns: GRID_COLUMNS, gap: '3px' }} role="row">
@@ -240,7 +278,10 @@ export const BurnCalendar: React.FC = () => {
                         type="button"
                         role="gridcell"
                         aria-selected={isSelected}
-                        onClick={() => setSelectedMonth(monthStr)}
+                        data-month={monthStr}
+                        tabIndex={monthStr === tabMonth ? 0 : -1}
+                        onKeyDown={(e) => onGridKeyDown(e, monthStr)}
+                        onClick={() => { setFocusMonth(monthStr); setSelectedMonth(monthStr); }}
                         onMouseEnter={(e) => showTip(e.currentTarget)}
                         onFocus={(e) => showTip(e.currentTarget)}
                         onMouseLeave={() => setHoveredCell(null)}

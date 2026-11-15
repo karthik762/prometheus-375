@@ -22,10 +22,17 @@ const appVars = { '--nav-height': '64px' } as React.CSSProperties;
 export const AppContent: React.FC = () => {
   return (
     <div className="app-container" style={appVars}>
+      {/* Keyboard users: jump past the nav and the scroll intro straight to the map */}
+      <a href="#explore" className="skip-link">
+        Skip to the map
+      </a>
+
       {/* 1. Sticky Navigation Bar with Cropped Shuttle Logo */}
       <NavBar />
 
       <main className="main-content">
+        {/* The page had no h1: screen readers use it as the page's name and first landmark */}
+        <h1 className="sr-only">Prometheus 375: harmonized fire activity calendar, 2001 to now</h1>
         {/* 2. Hero Mission & Black Marble Nighttime Lights Globe */}
         {USE_STORY_HERO ? <StoryHero /> : <Hero />}
 

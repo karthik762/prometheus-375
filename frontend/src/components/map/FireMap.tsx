@@ -136,6 +136,16 @@ export const FireMap: React.FC = () => {
 
   const isLive404 = liveError?.status === 404;
 
+  // Screen readers otherwise hear just "Map". MapLibre's keyboard handler already
+  // supports arrows (pan) and +/− (zoom) once the canvas has focus.
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const name = area.name ? area.name.replace(/\s*\(.*?\)\s*/g, '') : 'the selected area';
+    mapRef.current
+      .getCanvas()
+      .setAttribute('aria-label', `Map of ${name} with live fire hotspots from the last 7 days. Arrow keys pan, plus and minus zoom.`);
+  }, [area.name, mapLoaded]);
+
   // Initialize MapLibre
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -482,7 +492,6 @@ export const FireMap: React.FC = () => {
                       color: 'var(--color-text-primary)',
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.8125rem',
-                      outline: 'none',
                     }}
                   />
                 </div>
@@ -506,7 +515,6 @@ export const FireMap: React.FC = () => {
                       color: 'var(--color-text-primary)',
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.8125rem',
-                      outline: 'none',
                     }}
                   />
                 </div>
