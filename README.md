@@ -7,8 +7,8 @@ NASA Space Apps Challenge 2026 (Hyderabad). One consistent burning-activity cale
 | Folder | What | Owner |
 |---|---|---|
 | `pipeline/` | Offline Python: clean → grid → satellite fix → MODIS→VIIRS fit → validate | Rishitha, Poojitha |
-| `backend/` | FastAPI + DuckDB over parquet, live FIRMS feed | Karthik, Poojitha, Snehitha |
-| `frontend/` | React + Vite + MapLibre | Snehitha, Rishitha |
+| `backend/` | FastAPI + DuckDB over parquet, live FIRMS feed | Snehitha, Karthik, Poojitha |
+| `frontend/` | React + Vite + MapLibre | Rishitha, Snehitha |
 | `data-sample/` | Small sample in the shared contract format | Rishitha |
 | `docs/` | AGENTS.md, roles, tasks, decisions, handoffs, tracker | all |
 
