@@ -170,7 +170,7 @@ function buildMockAnomaly(month: string): Anomaly {
     .filter((r) => r.month.slice(5) === mm && r.month !== month && r.month < currentMonth)
     .map((r) => r.count)
     .sort((a, b) => a - b);
-  if (current === undefined || baseline.length < 3) return fallback;
+  if (current === undefined || baseline.length < 10) return fallback;
 
   const q = (p: number) => {
     const i = (baseline.length - 1) * p;
@@ -179,12 +179,13 @@ function buildMockAnomaly(month: string): Anomaly {
   };
   const mean = baseline.reduce((a, b) => a + b, 0) / baseline.length;
   const sd = Math.sqrt(baseline.reduce((a, b) => a + (b - mean) ** 2, 0) / (baseline.length - 1));
+  const zScore = baseline.length < 10 || sd < 1 ? null : (current - mean) / sd;
   return {
     current,
     median: q(0.5),
     p10: q(0.1),
     p90: q(0.9),
-    z_score: sd > 0 ? (current - mean) / sd : 0,
+    z_score: zScore,
     percentile: (100 * baseline.filter((v) => v <= current).length) / baseline.length,
     onset_shift_days: null,
     is_month_to_date: false,

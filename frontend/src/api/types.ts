@@ -21,7 +21,7 @@ export interface Anomaly {
   median: number;
   p10: number;
   p90: number;
-  z_score: number;
+  z_score: number | null;
   percentile: number;
   /** null when the season hasn't started yet / no onset for this area (contract: Optional) */
   onset_shift_days: number | null;

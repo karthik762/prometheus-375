@@ -162,10 +162,13 @@ def read_precomputed_anomaly(
     region: str = "india",
     anomaly_path: Optional[Path] = None,
     onset_path: Optional[Path] = None,
+    parquet_path: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Read precomputed anomaly and onset metrics from parquet if available.
     Supports day-matched 2026-11 baseline and onset fallback per DECISIONS.md.
+    Applies same null logic as on-the-fly: z_score is None when fewer than 10
+    prior years available or std < 1.
     """
     if not anomaly_path:
         anomaly_path = find_precomputed_file("anomaly", region=region)
@@ -175,7 +178,7 @@ def read_precomputed_anomaly(
     con = duckdb.connect(database=":memory:", read_only=False)
     try:
         q_anomaly = """
-            SELECT current, median, p10, p90, z_score, percentile
+            SELECT current, median, p10, p90, z_score, percentile, n_prior_years, month_to_date, mtd_days
             FROM read_parquet(?)
             WHERE area_id = ? AND month = ?
             LIMIT 1
@@ -184,7 +187,70 @@ def read_precomputed_anomaly(
         if not res_a:
             return None
 
-        current, median, p10, p90, z_score, percentile = res_a
+        current, median, p10, p90, z_score, percentile, n_prior_years, month_to_date, mtd_days = res_a
+
+        # Compute std_val on the fly from harmonized data since it's not in precomputed table
+        if not parquet_path or not os.path.exists(parquet_path):
+            candidates = [
+                "data/processed/harmonized.parquet",
+                "../data/processed/harmonized.parquet",
+                str(Path(__file__).resolve().parent.parent / "data" / "processed" / "harmonized.parquet"),
+                str(Path(__file__).resolve().parent / "data" / "harmonized.parquet"),
+                "backend/data/harmonized.parquet",
+            ]
+            for c in candidates:
+                if os.path.exists(c):
+                    parquet_path = c
+                    break
+
+        std_val = 0.0
+        if parquet_path and os.path.exists(parquet_path):
+            try:
+                from backend.spatial import build_spatial_filter, init_duckdb_spatial
+            except ImportError:
+                from spatial import build_spatial_filter, init_duckdb_spatial
+
+            # Get the region bbox for spatial filter
+            region_bbox = None
+            if area_id in ["pb_hr", "india"]:
+                region_bbox = (73.5, 27.5, 77.5, 32.5)
+            elif area_id == "brazil":
+                region_bbox = (-60.0, -22.0, -55.0, -16.0)
+            elif area_id == "greece":
+                region_bbox = (20.0, 36.0, 27.0, 42.0)
+            elif area_id == "australia":
+                region_bbox = (149.0, -37.5, 153.5, -31.5)
+            elif area_id == "california":
+                region_bbox = (-124.5, 32.5, -114.0, 42.0)
+
+            if region_bbox:
+                spatial_conditions, spatial_params, requires_spatial = build_spatial_filter(
+                    bbox=f"{region_bbox[0]},{region_bbox[1]},{region_bbox[2]},{region_bbox[3]}",
+                    polygon=None,
+                )
+                where_spatial = f"WHERE {' AND '.join(spatial_conditions)}" if spatial_conditions else ""
+                target_mm = month.split("-")[1]
+                prior_query = f"""
+                    SELECT SUM(harmonized_count) AS count
+                    FROM read_parquet(?)
+                    {where_spatial}
+                    AND month LIKE '%-{target_mm}'
+                    AND month < ?
+                    GROUP BY month
+                """
+                params = [parquet_path] + spatial_params + [month]
+                if requires_spatial:
+                    init_duckdb_spatial(con)
+                prior_df = con.execute(prior_query, params).df()
+                if not prior_df.empty and len(prior_df) >= 2:
+                    prior_vals = prior_df["count"].values
+                    std_val = float(np.std(prior_vals, ddof=1))
+
+        # Apply same null logic as on-the-fly computation
+        if n_prior_years < 10 or std_val < 1:
+            z_score_val = None
+        else:
+            z_score_val = round(float(z_score), 2)
 
         year = int(month.split("-")[0])
         onset_shift_days = get_preset_onset_shift(region=region, area_id=area_id, year=year)
@@ -194,9 +260,11 @@ def read_precomputed_anomaly(
             "median": round(float(median), 2),
             "p10": round(float(p10), 2),
             "p90": round(float(p90), 2),
-            "z_score": round(float(z_score), 2),
+            "z_score": z_score_val,
             "percentile": round(float(percentile), 1),
             "onset_shift_days": onset_shift_days,
+            "month_to_date": bool(month_to_date),
+            "mtd_days": int(mtd_days) if mtd_days is not None else None,
         }
     except Exception:
         return None
@@ -302,9 +370,14 @@ def compute_on_the_fly_anomaly(
     mean_val = float(np.mean(prior_arr))
     std_val = float(np.std(prior_arr, ddof=1)) if len(prior_counts) > 1 else 0.0
 
-    z_score = float((current - mean_val) / max(std_val, 1.0))
-    # Clamp extreme z-scores in very sparse areas
-    z_score = max(-10.0, min(10.0, z_score))
+    # Compute z-score only when sufficient historical data available
+    if len(prior_counts) < 10 or std_val < 1:
+        z_score_val: Optional[float] = None
+    else:
+        z_score = float((current - mean_val) / max(std_val, 1.0))
+        # Clamp extreme z-scores in very sparse areas
+        z_score = max(-10.0, min(10.0, z_score))
+        z_score_val = round(z_score, 2)
 
     percentile = float(
         np.mean(prior_arr < current) * 100.0 + np.mean(prior_arr == current) * 50.0
@@ -325,9 +398,11 @@ def compute_on_the_fly_anomaly(
         "median": round(median, 2),
         "p10": round(p10, 2),
         "p90": round(p90, 2),
-        "z_score": round(z_score, 2),
+        "z_score": z_score_val,
         "percentile": round(percentile, 1),
         "onset_shift_days": onset_shift_days,
+        "month_to_date": False,
+        "mtd_days": None,
     }
 
 

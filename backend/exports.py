@@ -202,8 +202,11 @@ def export_analytics_csv(
         std_val = float(np.std(prior_arr, ddof=1)) if len(prior) > 1 else 0.0
 
         z_score = float((c - mean_val) / max(std_val, 1.0))
-        z_score = max(-10.0, min(10.0, z_score))
-
+        if len(prior) >= 10 and std_val >= 1:
+            z_score = max(-10.0, min(10.0, z_score))
+            z_score_val = round(z_score, 2)
+        else:
+            z_score_val = None
         percentile = float(
             np.mean(prior_arr < c) * 100.0 + np.mean(prior_arr == c) * 50.0
         )
@@ -217,7 +220,7 @@ def export_analytics_csv(
             "median": round(median, 2),
             "p10": round(p10, 2),
             "p90": round(p90, 2),
-            "z_score": round(z_score, 2),
+            "z_score": z_score_val,
             "percentile": round(percentile, 1),
         })
 

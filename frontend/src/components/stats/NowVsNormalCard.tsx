@@ -143,7 +143,7 @@ export const NowVsNormalCard: React.FC = () => {
               }}
             >
               <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
-              <span>Z-Score: {anomaly.z_score >= 0 ? `+${anomaly.z_score.toFixed(2)}` : anomaly.z_score.toFixed(2)}σ</span>
+              <span>Z-Score: {anomaly.z_score !== null ? `${anomaly.z_score >= 0 ? '+' : '-'}${Math.abs(anomaly.z_score).toFixed(2)}σ` : "—"}</span>
             </div>
           </div>
         )}

@@ -76,13 +76,14 @@ def stats(cur: float, prior: np.ndarray) -> dict:
     n = len(prior)
     nan = float("nan")
     if n == 0:
-        return dict(median=nan, p10=nan, p90=nan, z_score=nan, percentile=nan, n_prior_years=0)
+        return dict(median=nan, p10=nan, p90=nan, z_score=nan, percentile=nan, n_prior_years=0, std_val=nan)
     p10, med, p90 = np.percentile(prior, [10, 50, 90])
+    std = prior.std(ddof=1) if n >= 2 else 0.0
     z = (cur - prior.mean()) / \
         max(prior.std(ddof=1), Z_STD_FLOOR) if n >= 2 else nan
     pct = 100.0 * (np.sum(prior < cur) + 0.5 * np.sum(prior == cur)) / n
     return dict(median=float(med), p10=float(p10), p90=float(p90), z_score=float(z),
-                percentile=float(pct), n_prior_years=n)
+                percentile=float(pct), n_prior_years=n, std_val=float(std))
 
 
 def anomaly_region(
@@ -189,10 +190,10 @@ def anomaly_region(
     con.execute("""
         CREATE OR REPLACE TEMP TABLE anom (area_id VARCHAR, month VARCHAR, current DOUBLE,
             median DOUBLE, p10 DOUBLE, p90 DOUBLE, z_score DOUBLE, percentile DOUBLE,
-            n_prior_years INTEGER, modis_share DOUBLE, month_to_date BOOLEAN, mtd_days INTEGER)
+            n_prior_years INTEGER, std_val DOUBLE, modis_share DOUBLE, month_to_date BOOLEAN, mtd_days INTEGER)
     """)
     cols = ["area_id", "month", "current", "median", "p10", "p90", "z_score", "percentile",
-            "n_prior_years", "modis_share", "month_to_date", "mtd_days"]
+            "n_prior_years", "std_val", "modis_share", "month_to_date", "mtd_days"]
     con.executemany(f"INSERT INTO anom VALUES ({', '.join('?' * len(cols))})",
                     [[None if isinstance(r[c], float) and np.isnan(r[c]) else r[c] for c in cols]
                      for r in rows])

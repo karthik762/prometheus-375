@@ -90,9 +90,11 @@ class AnomalyResponse(BaseModel):
     median: float
     p10: float
     p90: float
-    z_score: float
+    z_score: Optional[float]
     percentile: float
     onset_shift_days: Optional[float] = None
+    month_to_date: Optional[bool] = None
+    mtd_days: Optional[int] = None
 
 
 class BeforeAfterEntry(BaseModel):
