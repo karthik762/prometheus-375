@@ -25,6 +25,8 @@ export interface Anomaly {
   percentile: number;
   /** null when the season hasn't started yet / no onset for this area (contract: Optional) */
   onset_shift_days: number | null;
+  /** Season not started yet: already at least this many days later than normal (DECISIONS 15:35) */
+  onset_shift_min_days?: number | null;
   is_month_to_date?: boolean;
 }
 

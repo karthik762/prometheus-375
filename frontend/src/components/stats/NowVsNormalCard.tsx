@@ -15,6 +15,7 @@ export const NowVsNormalCard: React.FC = () => {
   // Current month is partial; backend flags it, but fall back to the calendar check
   const isMonthToDate = anomaly?.is_month_to_date ?? selectedMonth === CURRENT_MONTH;
   const onset = anomaly?.onset_shift_days;
+  const onsetMin = anomaly?.onset_shift_min_days;
   const baselineEnd = Number(selectedMonth.slice(0, 4)) - 1;
 
   return (
@@ -108,6 +109,24 @@ export const NowVsNormalCard: React.FC = () => {
               </strong>
               .
             </p>
+
+            {/* Season hasn't started: backend sends a lower bound instead of an onset */}
+            {typeof onset !== 'number' && typeof onsetMin === 'number' && (
+              <div
+                style={{
+                  fontSize: '0.9375rem',
+                  color: 'var(--color-text-primary)',
+                  fontWeight: 600,
+                  marginTop: '4px',
+                }}
+              >
+                Season hasn't started yet{' '}
+                <span style={{ color: 'var(--color-gold)' }}>
+                  — already ≥ {Math.floor(onsetMin)} days later than normal
+                </span>
+                .
+              </div>
+            )}
 
             {/* Onset only exists once the season has started; null = not yet / not computed */}
             {typeof onset === 'number' && (
