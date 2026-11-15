@@ -131,6 +131,8 @@ class AnomalyResponse(BaseModel):
     onset_shift_min_days: Optional[float] = None
     # True when the bbox/polygon contains zero harmonized grid cells (outside coverage)
     no_data: Optional[bool] = None
+    # Why no_data is true when it isn't plain outside-coverage, e.g. "sensor gap"
+    reason: Optional[str] = None
 
 
 class BeforeAfterEntry(BaseModel):
@@ -417,7 +419,7 @@ def _anomaly_cached(
     if not area_has_data(parquet_path, bbox=bbox, polygon=polygon):
         return dict(_NO_DATA_ANOMALY)
     result = get_anomaly_metrics(month=month, bbox=bbox, polygon=polygon, parquet_path=parquet_path)
-    return {**result, "no_data": False}
+    return {"no_data": False, **result}
 
 
 @app.get("/export.csv")
