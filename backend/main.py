@@ -1,11 +1,15 @@
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import duckdb
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+logger = logging.getLogger("prometheus375")
 
 try:
     from backend.spatial import build_spatial_filter, init_duckdb_spatial
@@ -36,6 +40,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global exception handler ensuring unexpected errors return safe 500 responses
+    without leaking stack traces, internal paths, or API keys to clients.
+    Preserves intentional HTTPException status codes and messages.
+    """
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=getattr(exc, "headers", None),
+        )
+    logger.exception("Unhandled error processing %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 def get_parquet_path() -> str:
@@ -93,8 +117,13 @@ class AnomalyResponse(BaseModel):
     z_score: Optional[float]
     percentile: float
     onset_shift_days: Optional[float] = None
+<<<<<<< HEAD
     month_to_date: Optional[bool] = None
     mtd_days: Optional[int] = None
+=======
+    # Onset not reached yet: lower bound on the delay (DECISIONS 2026-11-14 15:35)
+    onset_shift_min_days: Optional[float] = None
+>>>>>>> origin/main
 
 
 class BeforeAfterEntry(BaseModel):

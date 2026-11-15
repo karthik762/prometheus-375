@@ -2,20 +2,27 @@ import React from 'react';
 import { useAnomaly } from '../../hooks/useAnomaly';
 import { useSelection, CURRENT_MONTH } from '../../hooks/useSelection';
 import { CountUp } from './CountUp';
-import { formatCount, formatMonthShort } from '../../lib/format';
+import { areaErrorCopy, formatCount, formatMonthShort } from '../../lib/format';
 import { LoadingState, ComingSoonState, ErrorState } from '../ui/States';
 import { SampleDataBadge } from '../ui/SampleDataBadge';
 
 export const NowVsNormalCard: React.FC = () => {
   const { data: anomaly, isMock, loading, error, refetch } = useAnomaly();
-  const { selectedMonth } = useSelection();
+  const { selectedMonth, area } = useSelection();
 
   const monthLabel = formatMonthShort(selectedMonth).toUpperCase();
   const monthName = new Date(`${selectedMonth}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
   // Current month is partial; backend flags it, but fall back to the calendar check
   const isMonthToDate = anomaly?.is_month_to_date ?? selectedMonth === CURRENT_MONTH;
   const onset = anomaly?.onset_shift_days;
+  const onsetMin = anomaly?.onset_shift_min_days;
   const baselineEnd = Number(selectedMonth.slice(0, 4)) - 1;
+  // Early months (≈2001–2003) have only 1–2 earlier years: the p10–p90 band collapses to one
+  // value and z hits the backend's ±10 cap (e.g. Jul 2002 → z −10, 0th pct). Don't show those.
+  // No fires this month nor in any earlier year (sea, tiny area, outside the 5 regions):
+  // backend returns all zeros and p10 = p90 = 0, which must not read as "too few years".
+  const noFires = !!anomaly && anomaly.current === 0 && anomaly.median === 0 && anomaly.p90 === 0;
+  const thinBaseline = !noFires && !!anomaly && (anomaly.p10 === anomaly.p90 || Math.abs(anomaly.z_score) >= 10);
 
   return (
     <div
@@ -68,8 +75,7 @@ export const NowVsNormalCard: React.FC = () => {
           ) : (
             <ErrorState
               height="240px"
-              message="Anomaly metrics unavailable"
-              subtext={error.message}
+              {...areaErrorCopy(area, error, "Couldn't load this month's numbers")}
               onRetry={refetch}
             />
           )
@@ -101,13 +107,45 @@ export const NowVsNormalCard: React.FC = () => {
                 marginBottom: 'var(--space-sm)',
               }}
             >
-              {isMonthToDate ? 'Fires so far this month' : `Fires in ${monthName}`}, against a typical{' '}
-              {isMonthToDate ? `${monthName} to date` : monthName} of{' '}
-              <strong style={{ color: 'var(--color-text-primary)' }}>
-                {formatCount(anomaly.median)}
-              </strong>
-              .
+              {noFires ? (
+                <>
+                  No fires recorded in this area in {monthName} in any year of the record. Try a
+                  bigger area or a preset.
+                </>
+              ) : thinBaseline ? (
+                <>
+                  Fires in {monthName}. Too few earlier years in the record (it starts Nov 2000) to
+                  define a normal {monthName} yet.
+                </>
+              ) : (
+                <>
+                  {isMonthToDate ? 'Fires so far this month' : `Fires in ${monthName}`}, against a typical{' '}
+                  {isMonthToDate ? `${monthName} to date` : monthName} of{' '}
+                  <strong style={{ color: 'var(--color-text-primary)' }}>
+                    {formatCount(anomaly.median)}
+                  </strong>
+                  .
+                </>
+              )}
             </p>
+
+            {/* Season hasn't started: backend sends a lower bound instead of an onset */}
+            {typeof onset !== 'number' && typeof onsetMin === 'number' && (
+              <div
+                style={{
+                  fontSize: '0.9375rem',
+                  color: 'var(--color-text-primary)',
+                  fontWeight: 600,
+                  marginTop: '4px',
+                }}
+              >
+                Season{' '}
+                <span style={{ color: 'var(--color-gold)' }}>
+                  ≥ {Math.round(onsetMin)} days later than usual
+                </span>{' '}
+                — not started yet
+              </div>
+            )}
 
             {/* Onset only exists once the season has started; null = not yet / not computed */}
             {typeof onset === 'number' && (
@@ -142,8 +180,21 @@ export const NowVsNormalCard: React.FC = () => {
                 color: 'var(--color-text-tertiary)',
               }}
             >
+<<<<<<< HEAD
               <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
               <span>Z-Score: {anomaly.z_score !== null ? `${anomaly.z_score >= 0 ? '+' : '-'}${Math.abs(anomaly.z_score).toFixed(2)}σ` : "—"}</span>
+=======
+              {noFires ? (
+                <span>No rank or z-score: there is nothing to compare.</span>
+              ) : thinBaseline ? (
+                <span>Historical rank and z-score need at least 3 earlier years.</span>
+              ) : (
+                <>
+                  <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
+                  <span>Z-Score: {anomaly.z_score >= 0 ? `+${anomaly.z_score.toFixed(2)}` : anomaly.z_score.toFixed(2)}σ</span>
+                </>
+              )}
+>>>>>>> origin/main
             </div>
           </div>
         )}

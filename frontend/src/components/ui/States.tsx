@@ -11,6 +11,7 @@ interface StateProps {
 export const LoadingState: React.FC<StateProps> = ({
   height = '320px',
   message = 'Harmonizing satellite data…',
+  subtext = 'Querying 0.25° grid & cross-calibrating sensors',
 }) => {
   return (
     <div
@@ -49,7 +50,7 @@ export const LoadingState: React.FC<StateProps> = ({
           {message}
         </p>
         <span className="label-mono" style={{ fontSize: '0.7rem' }}>
-          Querying 0.25° grid & cross-calibrating sensors
+          {subtext}
         </span>
       </div>
     </div>

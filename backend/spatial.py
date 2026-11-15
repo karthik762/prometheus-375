@@ -1,17 +1,21 @@
 """
 Spatial filtering helper module for Prometheus 375.
 Handles bounding box (bbox) and GeoJSON polygon filtering using DuckDB spatial extension.
+Enforces coordinate validity, boundary limits, and the 200 sq deg maximum envelope constraint.
 """
 
 import json
+import math
 from typing import Any, List, Optional, Tuple
 import duckdb
 from fastapi import HTTPException
 import shapely.geometry as sg
 import shapely.ops as ops
 
-
 _SPATIAL_INITIALIZED = False
+
+# Maximum query envelope area in square degrees per project safety limit (DECISIONS.md)
+MAX_ENVELOPE_AREA_SQ_DEG = 200.0
 
 
 def init_duckdb_spatial(con: duckdb.DuckDBPyConnection) -> None:
@@ -36,8 +40,9 @@ def init_duckdb_spatial(con: duckdb.DuckDBPyConnection) -> None:
 
 def parse_bbox(bbox_str: str) -> Tuple[float, float, float, float]:
     """
-    Parse and validate a bounding box string format: minLon,minLat,maxLon,maxLat.
+    Parse and strictly validate a bounding box string format: minLon,minLat,maxLon,maxLat.
     Returns (min_lon, min_lat, max_lon, max_lat).
+    Raises HTTPException(400) on malformed, non-finite, inverted, or out-of-range coordinates.
     """
     try:
         parts = [float(p.strip()) for p in bbox_str.split(",")]
@@ -55,6 +60,27 @@ def parse_bbox(bbox_str: str) -> Tuple[float, float, float, float]:
 
     min_lon, min_lat, max_lon, max_lat = parts
 
+    # 1. Non-finite coordinate rejection (NaN, Inf, -Inf)
+    if not all(math.isfinite(c) for c in (min_lon, min_lat, max_lon, max_lat)):
+        raise HTTPException(
+            status_code=400,
+            detail="bbox coordinates must be finite real numbers (NaN and Inf are not allowed).",
+        )
+
+    # 2. Geographic range checks
+    if not (-90.0 <= min_lat <= 90.0 and -90.0 <= max_lat <= 90.0):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Latitude out of valid range [-90, 90]: minLat={min_lat}, maxLat={max_lat}.",
+        )
+
+    if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Longitude out of valid range [-180, 180]: minLon={min_lon}, maxLon={max_lon}.",
+        )
+
+    # 3. Inverted coordinate checks
     if min_lon > max_lon:
         raise HTTPException(
             status_code=400,
@@ -75,6 +101,7 @@ def parse_polygon(polygon_str: str) -> Tuple[str, Tuple[float, float, float, flo
     Feature, or FeatureCollection.
     Returns:
         (geom_geojson_str, (min_lon, min_lat, max_lon, max_lat))
+    Raises HTTPException(400) on malformed, non-finite, out-of-range, or invalid GeoJSON.
     """
     try:
         data = json.loads(polygon_str)
@@ -121,10 +148,21 @@ def parse_polygon(polygon_str: str) -> Tuple[str, Tuple[float, float, float, flo
 
         if not geom.is_valid:
             geom = geom.buffer(0)
-            if not geom.is_valid:
+            if not geom.is_valid or geom.is_empty:
                 raise ValueError("Geometry is self-intersecting or invalid.")
 
         bounds = geom.bounds  # (minx, miny, maxx, maxy) -> (min_lon, min_lat, max_lon, max_lat)
+        min_lon, min_lat, max_lon, max_lat = bounds
+
+        # Coordinate finiteness check
+        if not all(math.isfinite(c) for c in (min_lon, min_lat, max_lon, max_lat)):
+            raise ValueError("Polygon coordinates must be finite real numbers.")
+
+        # Geographic range check
+        if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0 and
+                -90.0 <= min_lat <= 90.0 and -90.0 <= max_lat <= 90.0):
+            raise ValueError(f"Polygon coordinates outside valid geographic range [-180..180, -90..90]: {bounds}")
+
         geom_json_str = json.dumps(sg.mapping(geom))
         return geom_json_str, bounds
     except Exception as e:
@@ -132,6 +170,64 @@ def parse_polygon(polygon_str: str) -> Tuple[str, Tuple[float, float, float, flo
             status_code=400,
             detail=f"Invalid GeoJSON polygon: {e}",
         )
+
+
+def calculate_envelope_area(bbox: Tuple[float, float, float, float]) -> float:
+    """Calculate bounding box envelope area in square degrees: (maxLon - minLon) * (maxLat - minLat)."""
+    min_lon, min_lat, max_lon, max_lat = bbox
+    return (max_lon - min_lon) * (max_lat - min_lat)
+
+
+def validate_area_limit(
+    envelope: Tuple[float, float, float, float],
+    max_area: float = MAX_ENVELOPE_AREA_SQ_DEG,
+) -> None:
+    """
+    Enforce backend spatial safety limit on query envelopes.
+    Raises HTTPException(400) if the envelope area exceeds max_area.
+    """
+    area = calculate_envelope_area(envelope)
+    if area > max_area + 1e-6:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Requested query envelope area ({area:.1f} sq deg) exceeds maximum allowed limit of {max_area:.0f} sq deg.",
+        )
+
+
+def get_effective_envelope(
+    bbox: Optional[str] = None,
+    polygon: Optional[str] = None,
+) -> Optional[Tuple[float, float, float, float]]:
+    """
+    Calculate the effective bounding box query envelope from bbox, polygon, or both.
+    If both are provided, computes their intersection envelope.
+    Returns:
+        (min_lon, min_lat, max_lon, max_lat) or None if neither provided.
+    Raises HTTPException(400) on malformed coordinates or non-intersecting envelopes.
+    """
+    bbox_bounds: Optional[Tuple[float, float, float, float]] = None
+    poly_bounds: Optional[Tuple[float, float, float, float]] = None
+
+    if bbox:
+        bbox_bounds = parse_bbox(bbox)
+
+    if polygon:
+        _, poly_bounds = parse_polygon(polygon)
+
+    if bbox_bounds and poly_bounds:
+        eff_min_lon = max(bbox_bounds[0], poly_bounds[0])
+        eff_min_lat = max(bbox_bounds[1], poly_bounds[1])
+        eff_max_lon = min(bbox_bounds[2], poly_bounds[2])
+        eff_max_lat = min(bbox_bounds[3], poly_bounds[3])
+
+        if eff_min_lon > eff_max_lon or eff_min_lat > eff_max_lat:
+            raise HTTPException(
+                status_code=400,
+                detail="Provided bbox and polygon do not intersect.",
+            )
+        return (eff_min_lon, eff_min_lat, eff_max_lon, eff_max_lat)
+
+    return bbox_bounds or poly_bounds
 
 
 def build_spatial_filter(
@@ -163,6 +259,11 @@ def build_spatial_filter(
             min_lat = max(bbox_bounds[1], poly_bounds[1])
             max_lon = min(bbox_bounds[2], poly_bounds[2])
             max_lat = min(bbox_bounds[3], poly_bounds[3])
+            if min_lon > max_lon or min_lat > max_lat:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Provided bbox and polygon do not intersect.",
+                )
         else:
             min_lon, min_lat, max_lon, max_lat = poly_bounds
 

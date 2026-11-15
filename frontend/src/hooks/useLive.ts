@@ -1,51 +1,23 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { LiveHotspotsCollection, ApiError } from '../api/types';
-import { fetchLiveHotspots } from '../api/api';
+import type { LiveHotspotsCollection } from '../api/types';
+import { fetchLiveHotspots, liveParams, peekCached } from '../api/api';
 import { useSelection } from './useSelection';
+import { useApiQuery, useAreaKey, type QueryState } from './useApiQuery';
 
-export function useLive(days = 7) {
+/** `error` is non-null when the live feed failed/timed out (data is then empty, never mock). */
+export type LiveState = QueryState<LiveHotspotsCollection>;
+
+/**
+ * /live has no date parameters (always the last `days` days), so this depends on
+ * the area only: moving the time slider or date inputs never refetches it.
+ */
+export function useLive(days = 7): LiveState {
   const { area } = useSelection();
-  const [data, setData] = useState<LiveHotspotsCollection | null>(null);
-  const [isMock, setIsMock] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<ApiError | null>(null);
+  const areaKey = useAreaKey(area);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const loadData = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    setLoading(true);
-    setError(null);
-
-    fetchLiveHotspots(area, days, controller.signal)
-      .then((res) => {
-        setData(res.data);
-        setIsMock(res.isMock);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if ((err as Error)?.name === 'AbortError') return;
-        setData(null);
-        setIsMock(false);
-        setError(err as ApiError);
-        setLoading(false);
-      });
-  }, [area, days]);
-
-  useEffect(() => {
-    loadData();
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [loadData]);
-
-  return { data, isMock, loading, error, refetch: loadData };
+  return useApiQuery<LiveHotspotsCollection>({
+    key: `live|${areaKey}|${days}`,
+    groupKey: areaKey,
+    fetcher: (signal) => fetchLiveHotspots(area, days, signal),
+    peek: () => peekCached<LiveHotspotsCollection>('/live', liveParams(area, days)),
+  });
 }

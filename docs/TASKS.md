@@ -34,14 +34,14 @@ Owners: R = Rishitha (data + frontend), P = Poojitha (data + backend), K = Karth
 ## Build 3
 - [x] **D7** P — International regions: Amazon, California, Australia, Indonesia (help: Rishitha) — after D5 — due Sun 02:00 — done 15:46 via D1–D6 runs: Brazil (incl. Amazon), Australia, California, Greece; Indonesia dropped (never downloaded)
 - [ ] **B5** K — /export.csv, /export_analytics.csv, /validation (help: Poojitha) — after D5, B2 — due Sat 23:00
-- [ ] **B6** K — Deploy backend to Render (parquet bundled), share URL — after I1 — due Sat 23:30
+- [x] **B6** K — Deploy backend to Render (parquet bundled), share URL — after I1 — due Sat 23:30 — done: https://prometheus-375.onrender.com — verified (Snehitha): /health parquet_exists, real /calendar (311 mo, MODIS+VIIRS), /anomaly, /validation (MAPE 11.37%), /live real FIRMS (1384 pts), CSV exports, CORS. Cold start ~31 s (free tier) → S3 keep-warm; drawn-polygon queries ~4 s warm (14 s first, spatial ext install)
 - [x] **F5** S — Live hotspots layer + download buttons — after B3, B5 — due Sun 01:00 — done: verified on real backend (B5 c034313) — /export.csv + /export_analytics.csv download as attachments and follow the selected area, /validation JSON (2020 holdout, MAPE 11.37%); live layer renders NOAA-20/21 points (snapshot fallback locally — needs FIRMS_MAP_KEY on Render for true NRT)
 - [ ] **F6** R — Before/after proof chart + uncertainty bands — after B5 — due Sun 01:00
-- [ ] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30
+- [x] **F7** K — Deploy frontend to Vercel from the repo, set VITE_API_URL (help: Snehitha) — after B6, F5 — due Sun 01:30 — done: https://prometheus-375.vercel.app (built against https://prometheus-375.onrender.com), verified in S1
 
 ## Sunday
-- [ ] **S1** S — React go/no-go (else Streamlit fallback) (help: Karthik, Rishitha, Poojitha) — after F7 — due Sun 10:00
-- [ ] **S2** S — Polish: accessibility, mobile, loading/empty/error states (help: Rishitha) — after S1 — due Sun 14:00
+- [x] **S1** S — React go/no-go (else Streamlit fallback) (help: Karthik, Rishitha, Poojitha) — after F7 — due Sun 10:00 — **GO on React** (Snehitha, 11:25): team go-checklist 11/11 on live https://prometheus-375.vercel.app — first paint ~1 s, no console errors, no Sample-data badge, /health ok, all 5 presets zoom + outline + live hotspots, real calendar per region, slider+card in sync (thin 2001–02 baselines now say so instead of z ±10), drawn area updates calendar + card (~7–10 s), both CSVs, phone width (emulated — still check on a real phone). Streamlit fallback not needed
+- [ ] **S2** S — Polish: accessibility, mobile, loading/empty/error states (help: Rishitha) — after S1 — due Sun 14:00 — **Ongoing**: loading/empty/error checklist done 11:50 (Snehitha) — loaders on presets/map/calendar/card/chart + 'Preparing CSV…' on download; live gives up at 15 s with Retry; 'No fires in this area' on calendar/card/chart (empty or all-zero); friendly messages + downloads 'Offline' with a wrong VITE_API_URL, no crash; tiny area → empty states; drawn areas capped at ~2× California (a 6,600 deg² area took Render down ~1 min). Left: accessibility pass, real-phone check
 - [ ] **S3** K — Hardening: caching, error handling, keep-warm ping (help: Snehitha) — after B6 — due Sun 14:00
 - [ ] **S4** P — Slides: problem -> proof -> demo -> limitations -> sensor retirement (help: Rishitha) — after D5 — due Sun 17:00
 - [ ] **S5** S — Demo video + screen-recording backup from deployed site (help: Karthik) — after S2 — due Sun 18:00

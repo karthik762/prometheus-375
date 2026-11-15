@@ -25,6 +25,8 @@ export interface Anomaly {
   percentile: number;
   /** null when the season hasn't started yet / no onset for this area (contract: Optional) */
   onset_shift_days: number | null;
+  /** Season not started yet: already at least this many days later than normal (DECISIONS 15:35) */
+  onset_shift_min_days?: number | null;
   is_month_to_date?: boolean;
 }
 
@@ -54,6 +56,8 @@ export interface BeforeAfterRow {
   harmonized: number;
   uncertainty_lo?: number;
   uncertainty_hi?: number;
+  source?: 'viirs' | 'modis_converted' | 'mixed';
+  partial?: boolean;
 }
 
 export interface ValidationData {
@@ -66,6 +70,8 @@ export interface ValidationData {
 export interface ApiError {
   message: string;
   status?: number;
+  /** Set when the request hit the client-side timeout (not a caller abort) */
+  timedOut?: boolean;
 }
 
 export interface ApiResponse<T> {

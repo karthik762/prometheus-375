@@ -7,11 +7,12 @@ Implements GET /validation:
 - per-month aggregation computing raw, harmonized, uncertainty_lo, uncertainty_hi
 - source = 'mixed' when COUNT(DISTINCT h.source) > 1, else MAX(h.source)
 - partial = True for month '2026-11', False otherwise
-- multi-key caching by (area, bbox) for sub-millisecond responses
+- multi-key bounded caching by (area, bbox) with TTL expiration for sub-millisecond responses
 """
 
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -40,8 +41,18 @@ AREA_BBOX_MAP: Dict[str, str] = {
     "india": "68.0,6.5,97.5,37.0",
 }
 
-# Cache mapped by cache_key: "area:bbox"
-_validation_cache: Dict[str, Dict[str, Any]] = {}
+# Bounded caching configuration
+MAX_VALIDATION_CACHE_SIZE = 50
+VALIDATION_CACHE_TTL = 3600.0  # 1 hour
+
+# Cache mapped by cache_key: "area:bbox" -> (timestamp, data_dict)
+_validation_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+
+
+def clear_validation_cache() -> None:
+    """Helper to clear validation cache (primarily for unit testing)."""
+    global _validation_cache
+    _validation_cache.clear()
 
 
 def find_data_file(filename: str) -> Optional[Path]:
@@ -75,9 +86,10 @@ def get_validation_data(
     Load validation metrics and before/after time series for the specified area or bbox.
     Defaults to pb_hr (73.5, 27.5, 77.5, 32.5).
     Filters on cell centroids (h.lat, h.lon) before the GROUP BY aggregation.
-    Results are cached by (effective_area, effective_bbox).
+    Results are cached by (effective_area, effective_bbox) with bounded size and TTL.
     """
     global _validation_cache
+    now = time.time()
 
     # 1. Resolve effective area and bbox
     effective_area = area.lower().strip() if area else None
@@ -102,8 +114,12 @@ def get_validation_data(
         parse_bbox(effective_bbox)
 
     cache_key = f"{effective_area}:{effective_bbox}"
+
+    # Check cache hit with TTL
     if not force_reload and cache_key in _validation_cache:
-        return _validation_cache[cache_key]
+        cached_time, cached_data = _validation_cache[cache_key]
+        if now - cached_time < VALIDATION_CACHE_TTL:
+            return cached_data
 
     # 2. Load metrics.json
     metrics_path = find_data_file("metrics.json")
@@ -186,5 +202,10 @@ def get_validation_data(
         "before_after": before_after_records,
     }
 
-    _validation_cache[cache_key] = result
+    # Store with timestamp and enforce bounded size
+    _validation_cache[cache_key] = (now, result)
+    if len(_validation_cache) > MAX_VALIDATION_CACHE_SIZE:
+        oldest_key = min(_validation_cache.keys(), key=lambda k: _validation_cache[k][0])
+        del _validation_cache[oldest_key]
+
     return result

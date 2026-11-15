@@ -72,7 +72,8 @@ def run_tests():
     assert isinstance(data_a1["z_score"], float)
     assert isinstance(data_a1["percentile"], float)
     assert data_a1["percentile"] == 11.5
-    assert data_a1["onset_shift_days"] == 28.5
+    assert data_a1["onset_shift_days"] is None  # onset not reached yet
+    assert data_a1["onset_shift_min_days"] == 28.5
     print("    --> PASS: Anomaly metrics adhere to frozen contract schema & DECISIONS.md")
 
     # 6. Anomaly: Punjab/Haryana for 2026-10

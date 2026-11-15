@@ -171,14 +171,64 @@ button {
   }
 }
 
-/* Phones: drop the centre nav links and the duplicate download button so the
-   header (logo + palette toggle) fits in ~390px */
-@media (max-width: 720px) {
+/* Second nav row, phones/small tablets only */
+.nav-mobile {
+  display: none;
+}
+
+/* Below ~880px the one-row header (logo, 4 links, palette, download) no longer fits:
+   the centre links move to a second row and the duplicate download button goes
+   (the "Data" link covers it). */
+@media (max-width: 880px) {
   .nav-links,
   .nav-download {
     display: none !important;
   }
 
+  .nav-mobile {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--color-border-subtle);
+    padding: 0 var(--space-sm);
+  }
+
+  .nav-mobile-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-mobile-link:hover,
+  .nav-mobile-link:focus-visible,
+  .nav-mobile-link:active {
+    color: var(--color-gold);
+  }
+
+  /* Header is taller here (64 + 41px row). StoryHero pins its stage below --nav-height,
+     which App sets inline to 64px, hence !important. */
+  .app-container {
+    --nav-height: 105px !important;
+  }
+
+  /* Keep section titles visible below the taller sticky header after a nav tap */
+  #explore,
+  #calendar,
+  #method,
+  #datasets {
+    scroll-margin-top: 106px;
+  }
+}
+
+/* Phones: tighten the top row so logo + palette toggle fit down to 320px */
+@media (max-width: 720px) {
   .palette-btn {
     padding: 4px 5px !important;
     font-size: 0.6875rem !important;
@@ -190,6 +240,31 @@ button {
 
   .nav-wordmark {
     font-size: 1.05rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .nav-inner {
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+
+  .nav-brand {
+    gap: 8px !important;
+  }
+
+  .nav-logo {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .nav-wordmark {
+    font-size: 0.875rem !important;
+  }
+
+  .palette-btn {
+    padding: 4px 3px !important;
+    font-size: 0.625rem !important;
   }
 }
 

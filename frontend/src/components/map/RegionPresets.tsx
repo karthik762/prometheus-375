@@ -4,7 +4,7 @@ import { useSelection } from '../../hooks/useSelection';
 import type { Preset } from '../../api/types';
 
 export const RegionPresets: React.FC = () => {
-  const { data: presets } = usePresets();
+  const { data: presets, loading } = usePresets();
   const { area, setPreset } = useSelection();
 
   const currentPresetId = area.type === 'preset' ? area.presetId : '';
@@ -22,7 +22,15 @@ export const RegionPresets: React.FC = () => {
         Area
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }} aria-busy={loading}>
+        {loading && !presets?.length && (
+          <div
+            role="status"
+            style={{ padding: '9px 12px', fontSize: '0.8125rem', color: 'var(--color-text-tertiary)' }}
+          >
+            Loading regions…
+          </div>
+        )}
         {presets?.map((p: Preset) => {
           const isSelected = currentPresetId === p.id;
           return (

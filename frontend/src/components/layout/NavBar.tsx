@@ -2,6 +2,13 @@ import React from 'react';
 import { useSelection } from '../../hooks/useSelection';
 import { COLOR_SCALES, getScaleAccent } from '../../lib/colorRamp';
 
+const SECTIONS = [
+  { href: '#explore', label: 'Explore' },
+  { href: '#calendar', label: 'Calendar' },
+  { href: '#method', label: 'Method' },
+  { href: '#datasets', label: 'Data' },
+];
+
 export const NavBar: React.FC = () => {
   const { colorScale, setColorScale } = useSelection();
 
@@ -14,9 +21,6 @@ export const NavBar: React.FC = () => {
         backgroundColor: 'rgba(16, 18, 32, 0.96)',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid var(--color-border)',
-        height: '64px',
-        display: 'flex',
-        alignItems: 'center',
       }}
     >
       <div
@@ -26,6 +30,7 @@ export const NavBar: React.FC = () => {
           width: '100%',
           margin: '0 auto',
           padding: '0 var(--space-lg)',
+          height: '64px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -35,6 +40,7 @@ export const NavBar: React.FC = () => {
         {/* Brand matching Image 2: Circular Space Shuttle Logo + Prometheus 375 */}
         <a
           href="#top"
+          className="nav-brand"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -47,6 +53,7 @@ export const NavBar: React.FC = () => {
         >
           {/* Circular logo mark with subtle gold ring & shuttle inside */}
           <div
+            className="nav-logo"
             style={{
               width: '38px',
               height: '38px',
@@ -62,8 +69,8 @@ export const NavBar: React.FC = () => {
             }}
           >
             <img
-              src="/logo.png?v=2"
-              alt="Prometheus 375 Logo"
+              src="/logo.png?v=3"
+              alt="Prometheus 375"
               style={{
                 width: '100%',
                 height: '100%',
@@ -220,6 +227,15 @@ export const NavBar: React.FC = () => {
           </a>
         </div>
       </div>
+
+      {/* Phones only (≤720px, see global.css): the centre links move to a second row */}
+      <nav className="nav-mobile" aria-label="Section Navigation (mobile)">
+        {SECTIONS.map((s) => (
+          <a key={s.href} href={s.href} className="nav-mobile-link">
+            {s.label}
+          </a>
+        ))}
+      </nav>
     </header>
   );
 };

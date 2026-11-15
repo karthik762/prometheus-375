@@ -64,3 +64,19 @@ export function formatBBox(bbox?: [number, number, number, number]): string {
   const [minLon, minLat, maxLon, maxLat] = bbox;
   return `${minLat.toFixed(2)}°N, ${minLon.toFixed(2)}°E to ${maxLat.toFixed(2)}°N, ${maxLon.toFixed(2)}°E`;
 }
+
+/**
+ * Error copy for a failed/timed-out query. Drawn or typed areas get the
+ * "try a smaller area" hint, since big polygons are what makes the server slow.
+ */
+export function areaErrorCopy(
+  area: { type: string },
+  error: { message: string; timedOut?: boolean },
+  fallbackTitle: string
+): { message: string; subtext: string } {
+  if (area.type === 'preset') return { message: fallbackTitle, subtext: error.message };
+  return {
+    message: "Couldn't compute for this area",
+    subtext: `Try a smaller area, or retry. ${error.timedOut ? 'The server timed out.' : error.message}`,
+  };
+}

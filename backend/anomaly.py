@@ -124,15 +124,18 @@ def find_precomputed_file(prefix: str, region: str = "india") -> Optional[Path]:
     return None
 
 
-def get_preset_onset_shift(region: str, area_id: str, year: int) -> Optional[float]:
+def get_preset_onset_shift(
+    region: str, area_id: str, year: int
+) -> Tuple[Optional[float], Optional[float]]:
     """
-    Look up onset_shift_days from onset_<region>.parquet.
+    Look up (onset_shift_days, onset_shift_min_days) from onset_<region>.parquet.
     Per DECISIONS.md, if onset has not been reached yet (e.g. Punjab 2026),
-    falls back to onset_shift_min_days.
+    onset_shift_days is None and onset_shift_min_days is the lower bound
+    ("season already >= N days later than usual").
     """
     onset_path = find_precomputed_file("onset", region=region)
     if not onset_path:
-        return None
+        return None, None
 
     con = duckdb.connect(database=":memory:", read_only=False)
     try:
@@ -146,14 +149,14 @@ def get_preset_onset_shift(region: str, area_id: str, year: int) -> Optional[flo
         if res_o:
             shift, min_shift = res_o
             if shift is not None and not (isinstance(shift, float) and np.isnan(shift)):
-                return round(float(shift), 1)
-            elif min_shift is not None and not (isinstance(min_shift, float) and np.isnan(min_shift)):
-                return round(float(min_shift), 1)
+                return round(float(shift), 1), None
+            if min_shift is not None and not (isinstance(min_shift, float) and np.isnan(min_shift)):
+                return None, round(float(min_shift), 1)
     except Exception:
         pass
     finally:
         con.close()
-    return None
+    return None, None
 
 
 def read_precomputed_anomaly(
@@ -253,7 +256,9 @@ def read_precomputed_anomaly(
             z_score_val = round(float(z_score), 2)
 
         year = int(month.split("-")[0])
-        onset_shift_days = get_preset_onset_shift(region=region, area_id=area_id, year=year)
+        onset_shift_days, onset_shift_min_days = get_preset_onset_shift(
+            region=region, area_id=area_id, year=year
+        )
 
         return {
             "current": round(float(current), 2),
@@ -263,8 +268,12 @@ def read_precomputed_anomaly(
             "z_score": z_score_val,
             "percentile": round(float(percentile), 1),
             "onset_shift_days": onset_shift_days,
+<<<<<<< HEAD
             "month_to_date": bool(month_to_date),
             "mtd_days": int(mtd_days) if mtd_days is not None else None,
+=======
+            "onset_shift_min_days": onset_shift_min_days,
+>>>>>>> origin/main
         }
     except Exception:
         return None
@@ -385,9 +394,10 @@ def compute_on_the_fly_anomaly(
 
     # Join onset_shift_days if this query matches a known preset region
     onset_shift_days: Optional[float] = None
+    onset_shift_min_days: Optional[float] = None
     year = int(month.split("-")[0])
     if preset_info:
-        onset_shift_days = get_preset_onset_shift(
+        onset_shift_days, onset_shift_min_days = get_preset_onset_shift(
             region=preset_info["region"],
             area_id=preset_info["area_id"],
             year=year,
@@ -401,8 +411,12 @@ def compute_on_the_fly_anomaly(
         "z_score": z_score_val,
         "percentile": round(percentile, 1),
         "onset_shift_days": onset_shift_days,
+<<<<<<< HEAD
         "month_to_date": False,
         "mtd_days": None,
+=======
+        "onset_shift_min_days": onset_shift_min_days,
+>>>>>>> origin/main
     }
 
 

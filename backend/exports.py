@@ -16,9 +16,19 @@ import numpy as np
 import pandas as pd
 
 try:
-    from backend.spatial import build_spatial_filter, init_duckdb_spatial
+    from backend.spatial import (
+        build_spatial_filter,
+        get_effective_envelope,
+        init_duckdb_spatial,
+        validate_area_limit,
+    )
 except ImportError:
-    from spatial import build_spatial_filter, init_duckdb_spatial
+    from spatial import (
+        build_spatial_filter,
+        get_effective_envelope,
+        init_duckdb_spatial,
+        validate_area_limit,
+    )
 
 
 def validate_month_param(param_name: str, value: Optional[str]) -> None:
@@ -43,6 +53,11 @@ def export_csv(
     """
     validate_month_param("start", start)
     validate_month_param("end", end)
+
+    # Enforce maximum 200 sq deg area envelope safety limit
+    envelope = get_effective_envelope(bbox=bbox, polygon=polygon)
+    if envelope:
+        validate_area_limit(envelope)
 
     if not parquet_path or not os.path.exists(parquet_path):
         raise HTTPException(

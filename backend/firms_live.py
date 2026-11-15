@@ -1,6 +1,6 @@
 """
-NASA FIRMS NRT active-fire hotspot fetcher with 30-minute in-memory TTL cache
-and static snapshot fallback for live demo resilience.
+NASA FIRMS NRT active-fire hotspot fetcher with 30-minute in-memory TTL cache,
+bounded memory footprint, failure cooldown, and static snapshot fallback for live demo resilience.
 Sources: VIIRS_NOAA20_NRT + VIIRS_NOAA21_NRT only (S-NPP ceased Nov 2, 2026).
 """
 
@@ -20,22 +20,68 @@ import shapely.geometry as sg
 from shapely.prepared import prep
 
 try:
-    from backend.spatial import parse_bbox, parse_polygon
+    from backend.spatial import get_effective_envelope, parse_bbox, parse_polygon, validate_area_limit
 except ImportError:
-    from spatial import parse_bbox, parse_polygon
+    from spatial import get_effective_envelope, parse_bbox, parse_polygon, validate_area_limit
 
 load_dotenv()
 logger = logging.getLogger("firms_live")
 
-# Default demo region: Punjab / Haryana
+# Default demo region: Punjab / Haryana (18.6 sq deg, well under 200 sq deg limit)
 DEFAULT_BBOX = (73.8, 27.6, 77.6, 32.5)
 
 # Only active VIIRS NRT instruments as of Nov 2026
 SOURCES = ["VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT"]
 
+# Caching and failure resilience configuration
+CACHE_TTL_SECONDS = 30 * 60       # 30 minutes for successful responses
+MAX_CACHE_SIZE = 100              # Maximum cached envelopes
+FAILURE_COOLDOWN_SECONDS = 60.0   # 60-second cooldown after upstream failures
+
 # 30-minute in-memory cache: (rounded_bbox, days) -> (timestamp, features)
-CACHE_TTL_SECONDS = 30 * 60
 _cache: Dict[Tuple[float, float, float, float, int], Tuple[float, List[Dict[str, Any]]]] = {}
+_last_failure_time: float = 0.0
+
+
+def _prune_cache(now: float) -> None:
+    """Evict expired entries and enforce MAX_CACHE_SIZE using LRU/FIFO."""
+    global _cache
+    # 1. Remove expired entries
+    expired_keys = [k for k, (t, _) in _cache.items() if now - t >= CACHE_TTL_SECONDS]
+    for k in expired_keys:
+        del _cache[k]
+
+    # 2. Enforce capacity limit
+    if len(_cache) > MAX_CACHE_SIZE:
+        sorted_keys = sorted(_cache.keys(), key=lambda k: _cache[k][0])
+        excess = len(_cache) - MAX_CACHE_SIZE
+        for k in sorted_keys[:excess]:
+            del _cache[k]
+
+
+def is_in_failure_cooldown(now: float) -> bool:
+    """Check if upstream FIRMS is currently in failure cooldown."""
+    global _last_failure_time
+    return (now - _last_failure_time) < FAILURE_COOLDOWN_SECONDS
+
+
+def record_failure(now: float) -> None:
+    """Record an upstream failure timestamp to activate cooldown."""
+    global _last_failure_time
+    _last_failure_time = now
+
+
+def reset_failure_cooldown() -> None:
+    """Reset failure cooldown after successful upstream response."""
+    global _last_failure_time
+    _last_failure_time = 0.0
+
+
+def clear_cache() -> None:
+    """Helper to clear in-memory cache (used primarily for unit testing)."""
+    global _cache, _last_failure_time
+    _cache.clear()
+    _last_failure_time = 0.0
 
 
 def get_map_key() -> Optional[str]:
@@ -147,17 +193,25 @@ def fetch_firms_source(
     bbox: Tuple[float, float, float, float],
     days: int,
 ) -> List[Dict[str, Any]]:
-    """Fetch and parse CSV for a single FIRMS VIIRS source."""
+    """
+    Fetch and parse CSV for a single FIRMS VIIRS source.
+    Ensures MAP_KEY is never leaked in exceptions or log messages.
+    """
     min_lon, min_lat, max_lon, max_lat = bbox
-    # FIRMS Area API expects [1..5] days for VIIRS area endpoints
     firms_days = max(1, min(days, 5))
     bbox_str = f"{min_lon},{min_lat},{max_lon},{max_lat}"
     url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{map_key}/{source}/{bbox_str}/{firms_days}"
 
     with httpx.Client(timeout=10.0) as client:
-        resp = client.get(url)
+        try:
+            resp = client.get(url)
+        except Exception as exc:
+            sanitized_exc = str(exc).replace(map_key, "[REDACTED]")
+            raise RuntimeError(f"FIRMS connection failed: {sanitized_exc}") from None
+
         if resp.status_code != 200:
-            raise RuntimeError(f"FIRMS API HTTP {resp.status_code}: {resp.text.strip()}")
+            sanitized_body = resp.text.strip().replace(map_key, "[REDACTED]")
+            raise RuntimeError(f"FIRMS API HTTP {resp.status_code}: {sanitized_body}")
         return parse_firms_csv(resp.text, default_source=source)
 
 
@@ -166,7 +220,7 @@ def fetch_live_hotspots(
     days: int,
 ) -> Tuple[List[Dict[str, Any]], str]:
     """
-    Fetch live VIIRS NRT hotspots with 30-min TTL caching and snapshot fallback.
+    Fetch live VIIRS NRT hotspots with 30-min TTL caching, failure cooldown, and snapshot fallback.
     Returns:
         (features, source_type) where source_type is 'live', 'cache', or 'snapshot_fallback'
     """
@@ -180,31 +234,47 @@ def fetch_live_hotspots(
     )
     now = time.time()
 
-    # 1. Check in-memory cache
+    # 1. Prune expired entries
+    _prune_cache(now)
+
+    # 2. Check in-memory cache hit
     if cache_key in _cache:
         cached_time, cached_features = _cache[cache_key]
         if now - cached_time < CACHE_TTL_SECONDS:
             return cached_features, "cache"
 
-    # 2. Check API key
+    # 3. Check upstream failure cooldown (avoid hammering failing upstream)
+    if is_in_failure_cooldown(now):
+        logger.info(
+            f"FIRMS upstream in failure cooldown (< {FAILURE_COOLDOWN_SECONDS:.0f}s); serving snapshot fallback"
+        )
+        return filter_features_by_bbox(load_fallback_features(), bbox), "snapshot_fallback"
+
+    # 4. Check API key
     map_key = get_map_key()
     if not map_key:
         logger.info("No FIRMS_MAP_KEY configured, serving snapshot fallback")
         return filter_features_by_bbox(load_fallback_features(), bbox), "snapshot_fallback"
 
-    # 3. Query FIRMS API for NOAA-20 and NOAA-21
+    # 5. Query FIRMS API for NOAA-20 and NOAA-21
     try:
         combined_features: List[Dict[str, Any]] = []
         for source in SOURCES:
             source_features = fetch_firms_source(map_key, source, bbox, days)
             combined_features.extend(source_features)
 
-        # Cache live result
+        # Successful fetch: reset cooldown and store in cache
+        reset_failure_cooldown()
         _cache[cache_key] = (now, combined_features)
+        _prune_cache(now)
         return combined_features, "live"
 
     except Exception as e:
-        logger.warning(f"FIRMS live fetch failed ({e}), using snapshot fallback")
+        record_failure(now)
+        err_msg = str(e).replace(map_key, "[REDACTED]")
+        logger.warning(
+            f"FIRMS live fetch failed ({err_msg}); entering {FAILURE_COOLDOWN_SECONDS:.0f}s cooldown and using snapshot fallback"
+        )
         return filter_features_by_bbox(load_fallback_features(), bbox), "snapshot_fallback"
 
 
@@ -250,32 +320,25 @@ def get_live_hotspots_geojson(
 ) -> Dict[str, Any]:
     """
     Main orchestrator for GET /live:
-    Determines query envelope, fetches/caches/falls back, filters by polygon if provided,
-    and returns GeoJSON FeatureCollection.
+    Determines query envelope, validates the 200 sq deg area safety limit,
+    fetches/caches/falls back, filters by polygon if provided, and returns GeoJSON FeatureCollection.
     """
-    target_bbox = DEFAULT_BBOX
+    # 1. Compute effective query envelope and enforce 200 sq deg limit
+    envelope = get_effective_envelope(bbox=bbox, polygon=polygon)
+    if envelope:
+        validate_area_limit(envelope)
+        target_bbox = envelope
+    else:
+        target_bbox = DEFAULT_BBOX
+
     parsed_poly_geom_str: Optional[str] = None
-
-    if bbox:
-        target_bbox = parse_bbox(bbox)
-
     if polygon:
-        parsed_poly_geom_str, poly_bounds = parse_polygon(polygon)
-        if bbox:
-            # Intersect bounds
-            target_bbox = (
-                max(target_bbox[0], poly_bounds[0]),
-                max(target_bbox[1], poly_bounds[1]),
-                min(target_bbox[2], poly_bounds[2]),
-                min(target_bbox[3], poly_bounds[3]),
-            )
-        else:
-            target_bbox = poly_bounds
+        parsed_poly_geom_str, _ = parse_polygon(polygon)
 
-    # Fetch candidate features (live, cache, or fallback)
+    # 2. Fetch candidate features (live, cache, or fallback)
     features, source_type = fetch_live_hotspots(target_bbox, days)
 
-    # If polygon was passed, apply exact polygon point containment
+    # 3. If polygon was passed, apply exact polygon point containment
     if parsed_poly_geom_str:
         features = filter_features_by_polygon(features, parsed_poly_geom_str)
 
