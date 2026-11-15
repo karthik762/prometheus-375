@@ -27,6 +27,11 @@ export interface Anomaly {
   onset_shift_days: number | null;
   /** Season not started yet: already at least this many days later than normal (DECISIONS 15:35) */
   onset_shift_min_days?: number | null;
+  /** Backend field: selected month is partial and compared day-matched (null when no_data) */
+  month_to_date?: boolean | null;
+  /** Backend field: number of days of the month in the data when month_to_date (e.g. 13 = 1st–13th) */
+  mtd_days?: number | null;
+  /** Legacy/mock name for month_to_date; read only as a fallback */
   is_month_to_date?: boolean;
   /**
    * Area contains zero harmonized grid cells (outside the 5 covered regions).

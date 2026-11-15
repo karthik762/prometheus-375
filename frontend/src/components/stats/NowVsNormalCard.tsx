@@ -14,7 +14,9 @@ export const NowVsNormalCard: React.FC = () => {
   const monthLabel = formatMonthShort(selectedMonth).toUpperCase();
   const monthName = new Date(`${selectedMonth}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
   // Current month is partial; backend flags it, but fall back to the calendar check
-  const isMonthToDate = anomaly?.is_month_to_date ?? selectedMonth === CURRENT_MONTH;
+  const isMonthToDate =
+    anomaly?.month_to_date ?? anomaly?.is_month_to_date ?? selectedMonth === CURRENT_MONTH;
+  const mtdDays = isMonthToDate && typeof anomaly?.mtd_days === 'number' ? anomaly.mtd_days : null;
   const onset = anomaly?.onset_shift_days;
   const onsetMin = anomaly?.onset_shift_min_days;
   const baselineEnd = Number(selectedMonth.slice(0, 4)) - 1;
@@ -229,7 +231,9 @@ export const NowVsNormalCard: React.FC = () => {
         }}
       >
         {isMonthToDate
-          ? `Day-matched baseline: the same days of ${monthName} in 2001–${baselineEnd}.`
+          ? mtdDays
+            ? `Day-matched baseline: ${monthName} 1–${mtdDays} in 2001–${baselineEnd}.`
+            : `Day-matched baseline: the same days of ${monthName} in 2001–${baselineEnd}.`
           : `Normal = the same month in the other years of the 2001–${Number(CURRENT_MONTH.slice(0, 4)) - 1} record.`}{' '}
         Per-satellite averaging keeps MODIS and VIIRS years comparable.
       </div>
