@@ -120,11 +120,11 @@ export const NowVsNormalCard: React.FC = () => {
                   marginTop: '4px',
                 }}
               >
-                Season hasn't started yet{' '}
+                Season{' '}
                 <span style={{ color: 'var(--color-gold)' }}>
-                  — already ≥ {Math.floor(onsetMin)} days later than normal
-                </span>
-                .
+                  ≥ {Math.round(onsetMin)} days later than usual
+                </span>{' '}
+                — not started yet
               </div>
             )}
 
