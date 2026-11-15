@@ -22,7 +22,9 @@ export const NowVsNormalCard: React.FC = () => {
   // No fires this month nor in any earlier year (sea, tiny area, outside the 5 regions):
   // backend returns all zeros and p10 = p90 = 0, which must not read as "too few years".
   const noFires = !!anomaly && anomaly.current === 0 && anomaly.median === 0 && anomaly.p90 === 0;
-  const thinBaseline = !noFires && !!anomaly && (anomaly.p10 === anomaly.p90 || Math.abs(anomaly.z_score) >= 10);
+  // z_score is null when the backend has too little history to compute one.
+  const thinBaseline =
+    !noFires && !!anomaly && (anomaly.p10 === anomaly.p90 || anomaly.z_score === null || Math.abs(anomaly.z_score) >= 10);
 
   return (
     <div
@@ -180,13 +182,9 @@ export const NowVsNormalCard: React.FC = () => {
                 color: 'var(--color-text-tertiary)',
               }}
             >
-<<<<<<< HEAD
-              <span>Historical Rank: {anomaly.percentile.toFixed(1)}th</span>
-              <span>Z-Score: {anomaly.z_score !== null ? `${anomaly.z_score >= 0 ? '+' : '-'}${Math.abs(anomaly.z_score).toFixed(2)}σ` : "—"}</span>
-=======
               {noFires ? (
                 <span>No rank or z-score: there is nothing to compare.</span>
-              ) : thinBaseline ? (
+              ) : thinBaseline || anomaly.z_score === null ? (
                 <span>Historical rank and z-score need at least 3 earlier years.</span>
               ) : (
                 <>
@@ -194,7 +192,6 @@ export const NowVsNormalCard: React.FC = () => {
                   <span>Z-Score: {anomaly.z_score >= 0 ? `+${anomaly.z_score.toFixed(2)}` : anomaly.z_score.toFixed(2)}σ</span>
                 </>
               )}
->>>>>>> origin/main
             </div>
           </div>
         )}
