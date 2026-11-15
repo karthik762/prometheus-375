@@ -15,6 +15,8 @@ import mockCalendar from '../mocks/calendar_punjab.json';
 import mockAnomaly from './mock/anomaly.json';
 import mockLive from './mock/live.geojson';
 import mockValidation from './mock/validation.json';
+// Exact copy of the live /presets response — fallback when the backend is down
+import bundledPresets from '../mocks/presets.json';
 
 const API_BASE = (typeof import.meta.env?.VITE_API_URL === 'string'
   ? import.meta.env.VITE_API_URL.trim()
@@ -105,7 +107,16 @@ export function buildSpatialParams(area: AreaSelection): Record<string, string> 
  * GET /presets
  */
 export async function fetchPresets(signal?: AbortSignal): Promise<ApiResponse<Preset[]>> {
-  return request<Preset[]>('/presets', {}, signal, mockPresets as Preset[]);
+  try {
+    return await request<Preset[]>('/presets', {}, signal, mockPresets as Preset[]);
+  } catch (err: unknown) {
+    if ((err as Error)?.name === 'AbortError') throw err;
+    // Backend down (e.g. Render 502/cold start): presets are static config, so use the
+    // bundled copy of the real /presets response rather than showing no area buttons.
+    // Not flagged as mock — it is the same data the backend serves.
+    console.warn('[presets] /presets failed, using bundled copy:', err);
+    return { data: bundledPresets as Preset[], isMock: false };
+  }
 }
 
 /**
