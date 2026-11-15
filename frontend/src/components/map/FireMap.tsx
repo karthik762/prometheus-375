@@ -36,11 +36,38 @@ const MAP_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
+// [[-180,-85],[180,85]], but with longitudes nudged inside ±180: MapLibre 5 wraps
+// exactly 180° to 0°, sees a zero-width lng range, constrains to zoom = Infinity and
+// crashes in _calcMatrices. (Its own renderWorldCopies:false default uses 180 - 1e-10.)
+const ALMOST_180 = 180 - 1e-9;
+const WORLD_BOUNDS: maplibregl.LngLatBoundsLike = [[-ALMOST_180, -85], [ALMOST_180, 85]];
+const FIT_PADDING = 40;
+const FIT_DURATION = 1200;
+
+/** Zoom at which the 512px-tile world spans the container width exactly. */
+function worldFitZoom(width: number): number {
+  return width > 0 ? Math.max(0, Math.log2(width / 512)) : 0;
+}
+
+/**
+ * fitBounds(bbox, {padding: 40, duration: 1200}). MapLibre's fitBounds silently
+ * does nothing (console warning only) when the padding doesn't fit the canvas,
+ * e.g. a narrow/mobile panel — so check with cameraForBounds and retry with
+ * no padding instead of leaving the camera where it was.
+ */
+function flyToBounds(map: maplibregl.Map, bounds: maplibregl.LngLatBoundsLike) {
+  const opts = { duration: FIT_DURATION, easing: (t: number) => t * (2 - t) };
+  const padding = map.cameraForBounds(bounds, { padding: FIT_PADDING }) ? FIT_PADDING : 0;
+  map.fitBounds(bounds, { ...opts, padding });
+}
+
 /** [[minLon,minLat],[maxLon,maxLat]] for a preset/bbox or a drawn polygon. */
 function areaBounds(area: AreaSelection): maplibregl.LngLatBoundsLike | null {
   if (area.bbox && area.bbox.length === 4) {
-    const [minX, minY, maxX, maxY] = area.bbox;
-    return [[minX, minY], [maxX, maxY]];
+    // Coerce + order-normalise so a stringy or swapped bbox can't break the fit
+    const [a, b, c, d] = area.bbox.map(Number);
+    if (![a, b, c, d].every(Number.isFinite)) return null;
+    return [[Math.min(a, c), Math.min(b, d)], [Math.max(a, c), Math.max(b, d)]];
   }
   if (area.polygon) {
     const rings = area.polygon.type === 'Polygon' ? [area.polygon.coordinates] : area.polygon.coordinates;
@@ -88,12 +115,23 @@ export const FireMap: React.FC = () => {
 
     const initialCenter: [number, number] = [75.5, 30.0];
 
+    const container = mapContainerRef.current;
     const map = new maplibregl.Map({
-      container: mapContainerRef.current,
+      container,
       style: MAP_STYLE,
       center: initialCenter,
       zoom: 5.2,
       fadeDuration: 300,
+      // Exactly one copy of the world, never panned/zoomed past its edges
+      renderWorldCopies: false,
+      maxBounds: WORLD_BOUNDS,
+      minZoom: worldFitZoom(container.clientWidth),
+    });
+
+    // Keep minZoom = "world fills the panel width" as the panel resizes (window resize,
+    // mobile rotation, grid stacking under 900px).
+    map.on('resize', () => {
+      map.setMinZoom(worldFitZoom(map.getContainer().clientWidth));
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -291,55 +329,36 @@ export const FireMap: React.FC = () => {
     const map = mapRef.current;
     if (!map || !mapLoaded) return;
 
-    const source = map.getSource('aoi-source') as maplibregl.GeoJSONSource | undefined;
-    if (!source) return;
-
-    let feature: GeoJSON.Feature | null = null;
-
-    if (area.polygon) {
-      feature = {
-        type: 'Feature',
-        geometry: area.polygon,
-        properties: {},
-      };
-    } else if (area.bbox && area.bbox.length === 4) {
-      const [minX, minY, maxX, maxY] = area.bbox;
-      feature = {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [minX, minY],
-              [maxX, minY],
-              [maxX, maxY],
-              [minX, maxY],
-              [minX, minY],
-            ],
-          ],
-        },
-        properties: {},
-      };
-    }
-
-    source.setData({
-      type: 'FeatureCollection',
-      features: feature ? [feature] : [],
-    });
-
+    // Camera first and unconditionally — it must not depend on the AOI source existing.
     const bounds = areaBounds(area);
-    if (!bounds) return;
-
     // Resize first (the container can change size after layout/reveal animations),
     // then fit on the next frame so the camera uses the real canvas dimensions.
-    const raf = requestAnimationFrame(() => {
-      map.resize();
-      map.fitBounds(bounds, {
-        padding: 60,
-        duration: 900,
-        easing: (t) => t * (2 - t),
-      });
-    });
+    const raf = bounds
+      ? requestAnimationFrame(() => {
+          map.resize();
+          flyToBounds(map, bounds);
+        })
+      : 0;
+
+    const source = map.getSource('aoi-source') as maplibregl.GeoJSONSource | undefined;
+    if (source) {
+      let feature: GeoJSON.Feature | null = null;
+      if (area.polygon) {
+        feature = { type: 'Feature', geometry: area.polygon, properties: {} };
+      } else if (area.bbox && area.bbox.length === 4) {
+        const [minX, minY, maxX, maxY] = area.bbox;
+        feature = {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY], [minX, minY]]],
+          },
+          properties: {},
+        };
+      }
+      source.setData({ type: 'FeatureCollection', features: feature ? [feature] : [] });
+    }
+
     return () => cancelAnimationFrame(raf);
   }, [area, mapLoaded]);
 
