@@ -150,10 +150,13 @@ def get_preset_onset_shift(
         res_o = con.execute(q_onset, [str(onset_path), area_id, year]).fetchone()
         if res_o:
             shift, min_shift = res_o
+            shift_val = None
+            min_shift_val = None
             if shift is not None and not (isinstance(shift, float) and np.isnan(shift)):
-                return round(float(shift), 1), None
+                shift_val = round(float(shift), 1)
             if min_shift is not None and not (isinstance(min_shift, float) and np.isnan(min_shift)):
-                return None, round(float(min_shift), 1)
+                min_shift_val = round(float(min_shift), 1)
+            return shift_val, min_shift_val
     except Exception:
         pass
     finally:
